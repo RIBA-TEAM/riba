@@ -1,0 +1,1 @@
+"""RIBA Backend Application"""
