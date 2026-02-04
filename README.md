@@ -312,3 +312,6 @@ All rights reserved
 ## 🤝 Support
 
 For issues or questions, refer to the backend documentation in `backend/README.md`.
+
+## Team
+- Ayşe Nur (Backend & DevOps)
