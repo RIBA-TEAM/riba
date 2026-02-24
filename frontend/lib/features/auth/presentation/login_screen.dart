@@ -1,8 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../teacher/presentation/teacher_dashboard.dart';
-
-
+import '../../student/student_routes.dart';
 
 enum UserRole { student, parent, counselor }
 
@@ -58,16 +57,10 @@ class _LoginScreenState extends State<LoginScreen> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: const LinearGradient(
-  begin: Alignment.topLeft,
-  end: Alignment.bottomRight,
-  colors: [
-    Color(0xFF042F2E),
-    Color(0xFF064E3B),
-    Color(0xFF1E40AF),
-  ],
-),
-
-
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF042F2E), Color(0xFF064E3B), Color(0xFF1E40AF)],
+          ),
         ),
         child: Center(
           child: Padding(
@@ -75,7 +68,6 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-
                 /// 🔵 LOGO + TITLE (YUKARIDA)
                 Column(
                   children: const [
@@ -114,7 +106,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-
                           Text(
                             getTitle(),
                             style: const TextStyle(
@@ -133,8 +124,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             child: Row(
                               children: UserRole.values.map((role) {
-                                final isSelected =
-                                    role == selectedRole;
+                                final isSelected = role == selectedRole;
 
                                 return Expanded(
                                   child: GestureDetector(
@@ -145,26 +135,20 @@ class _LoginScreenState extends State<LoginScreen> {
                                       });
                                     },
                                     child: Container(
-                                      padding:
-                                          const EdgeInsets.symmetric(
-                                              vertical: 12),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 12,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: isSelected
-                                            ? const Color(
-                                                0xFF196EE6)
+                                            ? const Color(0xFF196EE6)
                                             : Colors.transparent,
-                                        borderRadius:
-                                            BorderRadius.circular(
-                                                12),
+                                        borderRadius: BorderRadius.circular(12),
                                       ),
                                       child: Text(
-                                        role.name
-                                            .toUpperCase(),
-                                        textAlign:
-                                            TextAlign.center,
+                                        role.name.toUpperCase(),
+                                        textAlign: TextAlign.center,
                                         style: TextStyle(
-                                          fontWeight:
-                                              FontWeight.w600,
+                                          fontWeight: FontWeight.w600,
                                           color: isSelected
                                               ? Colors.white
                                               : Colors.black54,
@@ -181,24 +165,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
                           /// IDENTIFIER FIELD
                           TextField(
-                            controller:
-                                identifierController,
-                            keyboardType:
-                                selectedRole ==
-                                        UserRole.student
-                                    ? TextInputType.number
-                                    : TextInputType
-                                        .emailAddress,
+                            controller: identifierController,
+                            keyboardType: selectedRole == UserRole.student
+                                ? TextInputType.number
+                                : TextInputType.emailAddress,
                             decoration: InputDecoration(
-                              prefixIcon: Icon(
-                                  getIdentifierIcon()),
-                              hintText:
-                                  getIdentifierHint(),
-                              border:
-                                  OutlineInputBorder(
-                                borderRadius:
-                                    BorderRadius.circular(
-                                        12),
+                              prefixIcon: Icon(getIdentifierIcon()),
+                              hintText: getIdentifierHint(),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
                               ),
                             ),
                           ),
@@ -207,20 +182,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
                           /// PASSWORD FIELD
                           TextField(
-                            controller:
-                                passwordController,
+                            controller: passwordController,
                             obscureText: true,
-                            decoration:
-                                InputDecoration(
-                              prefixIcon:
-                                  const Icon(Icons
-                                      .lock_outline),
+                            decoration: InputDecoration(
+                              prefixIcon: const Icon(Icons.lock_outline),
                               hintText: "Password",
-                              border:
-                                  OutlineInputBorder(
-                                borderRadius:
-                                    BorderRadius.circular(
-                                        12),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
                               ),
                             ),
                           ),
@@ -231,40 +199,33 @@ class _LoginScreenState extends State<LoginScreen> {
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
-                              style:
-                                  ElevatedButton
-                                      .styleFrom(
-                                backgroundColor:
-                                    const Color(
-                                        0xFF196EE6),
-                                padding:
-                                    const EdgeInsets
-                                        .symmetric(
-                                        vertical: 16),
-                                shape:
-                                    RoundedRectangleBorder(
-                                  borderRadius:
-                                      BorderRadius
-                                          .circular(
-                                              12),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF196EE6),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
                               onPressed: () {
-  if (selectedRole == UserRole.counselor) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => TeacherDashboard(),
-      ),
-    );
-  }
-},                         
+                                if (selectedRole == UserRole.counselor) {
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => TeacherDashboard(),
+                                    ),
+                                  );
+                                } else if (selectedRole == UserRole.student) {
+                                  Navigator.pushReplacementNamed(
+                                    context,
+                                    StudentRoutes.dashboard,
+                                  );
+                                }
+                              },
                               child: const Text(
                                 "Sign In",
-                                style: TextStyle(
-                                    fontWeight:
-                                        FontWeight
-                                            .bold),
+                                style: TextStyle(fontWeight: FontWeight.bold),
                               ),
                             ),
                           ),
