@@ -262,7 +262,11 @@ class _StudentSettingsScreenState extends State<StudentSettingsScreen> {
           ),
 
           /// Sağ tarafta toggle şıkı
-          Switch(value: value, activeColor: Colors.blue, onChanged: onChanged),
+          Switch(
+            value: value,
+            activeThumbColor: Colors.blue,
+            onChanged: onChanged,
+          ),
         ],
       ),
     );

@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:frontend/features/teacher/presentation/student_risk_list_screen.dart';
 
@@ -21,11 +20,11 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
       buildDashboardContent(),
       const StudentRiskListScreen(),
       const Center(
-          child: Text("Raporlar",
-              style: TextStyle(color: Colors.white))),
+        child: Text("Raporlar", style: TextStyle(color: Colors.white)),
+      ),
       const Center(
-          child: Text("Ayarlar",
-              style: TextStyle(color: Colors.white))),
+        child: Text("Ayarlar", style: TextStyle(color: Colors.white)),
+      ),
     ];
   }
 
@@ -57,17 +56,18 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
         },
         items: const [
           BottomNavigationBarItem(
-              icon: Icon(Icons.dashboard),
-              label: "Anasayfa"),
+            icon: Icon(Icons.dashboard),
+            label: "Anasayfa",
+          ),
           BottomNavigationBarItem(
-              icon: Icon(Icons.assignment_late),
-              label: "Öğrenciler"),
+            icon: Icon(Icons.assignment_late),
+            label: "Öğrenciler",
+          ),
           BottomNavigationBarItem(
-              icon: Icon(Icons.bar_chart),
-              label: "Raporlar"),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.settings),
-              label: "Ayarlar"),
+            icon: Icon(Icons.bar_chart),
+            label: "Raporlar",
+          ),
+          BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Ayarlar"),
         ],
       ),
     );
@@ -82,10 +82,7 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
             gradient: RadialGradient(
               center: Alignment.topRight,
               radius: 1.2,
-              colors: [
-                Color(0xFF1E3A8A),
-                Color(0xFF101922),
-              ],
+              colors: [Color(0xFF1E3A8A), Color(0xFF101922)],
             ),
           ),
         ),
@@ -94,51 +91,55 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
             children: [
               Padding(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 20, vertical: 10),
+                  horizontal: 20,
+                  vertical: 10,
+                ),
                 child: Row(
-                  mainAxisAlignment:
-                      MainAxisAlignment.spaceBetween,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Row(
                       children: const [
                         CircleAvatar(
                           radius: 24,
-                          backgroundColor:
-                              Color(0xFF137FEC),
-                          child: Icon(Icons.person,
-                              color: Colors.white),
+                          backgroundColor: Color(0xFF137FEC),
+                          child: Icon(Icons.person, color: Colors.white),
                         ),
                         SizedBox(width: 12),
                         Column(
-                          crossAxisAlignment:
-                              CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text("Günaydın",
-                                style: TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 12)),
-                            Text("Şevval Eser",
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight:
-                                        FontWeight.bold,
-                                    fontSize: 18)),
+                            Text(
+                              "Günaydın",
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 12,
+                              ),
+                            ),
+                            Text(
+                              "Şevval Eser",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
+                            ),
                           ],
-                        )
+                        ),
                       ],
                     ),
-                    const Icon(Icons.notifications,
-                        color: Colors.white, size: 28),
+                    const Icon(
+                      Icons.notifications,
+                      color: Colors.white,
+                      size: 28,
+                    ),
                   ],
                 ),
               ),
               const SizedBox(height: 20),
               Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 20),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
                       "Öğrenci Önceliklendirme",
@@ -152,22 +153,28 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
                     Row(
                       children: const [
                         Expanded(
-                            child: RiskCard(
-                                title: "Yüksek Risk",
-                                count: "12",
-                                color: Colors.orange)),
+                          child: RiskCard(
+                            title: "Yüksek Risk",
+                            count: "12",
+                            color: Colors.orange,
+                          ),
+                        ),
                         SizedBox(width: 10),
                         Expanded(
-                            child: RiskCard(
-                                title: "Orta Risk",
-                                count: "24",
-                                color: Colors.teal)),
+                          child: RiskCard(
+                            title: "Orta Risk",
+                            count: "24",
+                            color: Colors.teal,
+                          ),
+                        ),
                         SizedBox(width: 10),
                         Expanded(
-                            child: RiskCard(
-                                title: "Düşük Risk",
-                                count: "56",
-                                color: Colors.blue)),
+                          child: RiskCard(
+                            title: "Düşük Risk",
+                            count: "56",
+                            color: Colors.blue,
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -176,28 +183,26 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
               const SizedBox(height: 20),
               Expanded(
                 child: ListView(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   children: const [
                     AlertTile(
-                        initials: "JD",
-                        title:
-                            "Belirgin ruh hali değişimi",
-                        subtitle:
-                            "Yüksek stres göstergeleri tespit edildi",
-                        color: Colors.orange),
+                      initials: "JD",
+                      title: "Belirgin ruh hali değişimi",
+                      subtitle: "Yüksek stres göstergeleri tespit edildi",
+                      color: Colors.orange,
+                    ),
                     AlertTile(
-                        initials: "AL",
-                        title: "Yoklama eksik",
-                        subtitle:
-                            "3 ardışık kontrol atlandı",
-                        color: Colors.teal),
+                      initials: "AL",
+                      title: "Yoklama eksik",
+                      subtitle: "3 ardışık kontrol atlandı",
+                      color: Colors.teal,
+                    ),
                     AlertTile(
-                        initials: "RB",
-                        title: "Olumlu gelişme",
-                        subtitle:
-                            "Duygusal istikrar artışı gözlemlendi",
-                        color: Colors.blue),
+                      initials: "RB",
+                      title: "Olumlu gelişme",
+                      subtitle: "Duygusal istikrar artışı gözlemlendi",
+                      color: Colors.blue,
+                    ),
                   ],
                 ),
               ),
@@ -230,20 +235,25 @@ class RiskCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title,
-              style: TextStyle(
-                  color: color,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold)),
+          Text(
+            title,
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 8),
-          Text(count,
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold)),
+          Text(
+            count,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ],
       ),
     );
@@ -277,35 +287,33 @@ class AlertTile extends StatelessWidget {
         child: Row(
           children: [
             CircleAvatar(
-              backgroundColor:
-                  color.withOpacity(0.2),
-              child: Text(initials,
-                  style: TextStyle(
-                      color: color,
-                      fontWeight:
-                          FontWeight.bold)),
+              backgroundColor: color.withOpacity(0.2),
+              child: Text(
+                initials,
+                style: TextStyle(color: color, fontWeight: FontWeight.bold),
+              ),
             ),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title,
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight:
-                              FontWeight.bold)),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   const SizedBox(height: 4),
-                  Text(subtitle,
-                      style: const TextStyle(
-                          color: Colors.grey,
-                          fontSize: 12)),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right,
-                color: Colors.grey)
+            const Icon(Icons.chevron_right, color: Colors.grey),
           ],
         ),
       ),
