@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../teacher/presentation/teacher_dashboard.dart';
 import '../../student/student_routes.dart';
+import '../../parent/parent_routes.dart'; // ✅ EKLENDİ
 
 enum UserRole { student, parent, counselor }
 
@@ -220,6 +221,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                   Navigator.pushReplacementNamed(
                                     context,
                                     StudentRoutes.dashboard,
+                                  );
+                                } else if (selectedRole == UserRole.parent) {
+                                  // ✅ EKLENDİ
+                                  Navigator.pushReplacementNamed(
+                                    context,
+                                    ParentRoutes.dashboard,
                                   );
                                 }
                               },

@@ -4,6 +4,7 @@
 import 'package:flutter/material.dart';
 import 'features/auth/presentation/login_screen.dart';
 import 'features/student/student_routes.dart';
+import 'features/parent/parent_routes.dart'; // ✅ EKLENDİ
 
 /// Uygulamanın başlangıç noktası
 void main() {
@@ -36,7 +37,8 @@ class MyApp extends StatelessWidget {
 
       /// Tüm sayfalar için yönlendirme yapılandırması
       routes: {
-        ...StudentRoutes.routes, // Öğrenci modülü rotaları ekle
+        ...StudentRoutes.routes, // Öğrenci modülü rotaları
+        ...ParentRoutes.routes, // ✅ Parent modülü rotaları eklendi
       },
     );
   }
