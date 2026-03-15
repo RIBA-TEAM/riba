@@ -6,6 +6,8 @@ import 'features/auth/presentation/login_screen.dart';
 import 'features/student/student_routes.dart';
 import 'features/parent/parent_routes.dart'; // ✅ EKLENDİ
 
+
+
 /// Uygulamanın başlangıç noktası
 void main() {
   runApp(const MyApp());
@@ -34,6 +36,7 @@ class MyApp extends StatelessWidget {
 
       /// Uygulamanın giriş sayfası
       home: const LoginScreen(),
+      
 
       /// Tüm sayfalar için yönlendirme yapılandırması
       routes: {
