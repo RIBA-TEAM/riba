@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ObservationScreen extends StatefulWidget {
   const ObservationScreen({super.key});
@@ -8,7 +9,6 @@ class ObservationScreen extends StatefulWidget {
 }
 
 class _ObservationScreenState extends State<ObservationScreen> {
-
   String? student;
   String? behavior;
   String? academic;
@@ -17,7 +17,6 @@ class _ObservationScreenState extends State<ObservationScreen> {
 
   @override
   Widget build(BuildContext context) {
-
     const backgroundDark = Color(0xFF101922);
     const primary = Color(0xFF137FEC);
     const success = Color(0xFF22C55E);
@@ -29,10 +28,7 @@ class _ObservationScreenState extends State<ObservationScreen> {
         decoration: const BoxDecoration(
           gradient: RadialGradient(
             radius: 1.5,
-            colors: [
-              Color(0xFF1A2A3A),
-              Color(0xFF101922),
-            ],
+            colors: [Color(0xFF1A2A3A), Color(0xFF101922)],
             center: Alignment.topRight,
           ),
         ),
@@ -40,14 +36,14 @@ class _ObservationScreenState extends State<ObservationScreen> {
         child: SafeArea(
           child: Column(
             children: [
-
               /// HEADER
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
                 decoration: const BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(color: Colors.white10),
-                  ),
+                  border: Border(bottom: BorderSide(color: Colors.white10)),
                 ),
                 child: Row(
                   children: [
@@ -85,7 +81,6 @@ class _ObservationScreenState extends State<ObservationScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-
                       /// ÖĞRENCİ SEÇİMİ
                       _sectionTitle(Icons.person_search, "Öğrenci Seçimi"),
 
@@ -95,8 +90,14 @@ class _ObservationScreenState extends State<ObservationScreen> {
                         value: student,
                         hint: "Öğrenci Seçiniz",
                         items: const [
-                          DropdownMenuItem(value: "sarah", child: Text("Sarah Jenkins")),
-                          DropdownMenuItem(value: "john", child: Text("John Doe")),
+                          DropdownMenuItem(
+                            value: "sarah",
+                            child: Text("Sarah Jenkins"),
+                          ),
+                          DropdownMenuItem(
+                            value: "john",
+                            child: Text("John Doe"),
+                          ),
                         ],
                         onChanged: (v) => setState(() => student = v),
                       ),
@@ -114,11 +115,11 @@ class _ObservationScreenState extends State<ObservationScreen> {
 
                         child: Row(
                           children: [
-
                             const CircleAvatar(
                               radius: 28,
                               backgroundImage: NetworkImage(
-                                  "https://lh3.googleusercontent.com/aida-public/AB6AXuAfD2MXwwckz_dC5nCAOFL1yO_sUMmWLJ9NZlfkG0xNMSJjv71x_xTR_aguvSyY5nPJBF5V6XFQnrypl3UJGucabyonrqmfQgeB511V-dITjQIqUIjt7ob_Q3s6s0zAk40mWjYYXxvyd7KSgpu1DszdBLp5qVl4wqlC-2JHkUzzaaTt2R4bbDo3VMEgoHKCtWyMiYZ8CXd-9Olw_Axzy1oEMuir-K_l0U7Gt8IYUaSIAncM_H-tmWedIgic9iU-Ow3IqWFtnV9wLKPf"),
+                                "https://lh3.googleusercontent.com/aida-public/AB6AXuAfD2MXwwckz_dC5nCAOFL1yO_sUMmWLJ9NZlfkG0xNMSJjv71x_xTR_aguvSyY5nPJBF5V6XFQnrypl3UJGucabyonrqmfQgeB511V-dITjQIqUIjt7ob_Q3s6s0zAk40mWjYYXxvyd7KSgpu1DszdBLp5qVl4wqlC-2JHkUzzaaTt2R4bbDo3VMEgoHKCtWyMiYZ8CXd-9Olw_Axzy1oEMuir-K_l0U7Gt8IYUaSIAncM_H-tmWedIgic9iU-Ow3IqWFtnV9wLKPf",
+                              ),
                             ),
 
                             const SizedBox(width: 14),
@@ -127,12 +128,12 @@ class _ObservationScreenState extends State<ObservationScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-
                                   Text(
                                     "Sarah Jenkins",
                                     style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white),
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
                                   ),
 
                                   SizedBox(height: 4),
@@ -145,7 +146,7 @@ class _ObservationScreenState extends State<ObservationScreen> {
                               ),
                             ),
 
-                            const Icon(Icons.check_circle, color: primary)
+                            const Icon(Icons.check_circle, color: primary),
                           ],
                         ),
                       ),
@@ -161,10 +162,22 @@ class _ObservationScreenState extends State<ObservationScreen> {
                         value: behavior,
                         hint: "Gözlem seçiniz...",
                         items: const [
-                          DropdownMenuItem(value: "mood", child: Text("Ruh hali değişimi")),
-                          DropdownMenuItem(value: "withdrawal", child: Text("İçe kapanma")),
-                          DropdownMenuItem(value: "aggression", child: Text("Agresif davranış")),
-                          DropdownMenuItem(value: "anxiety", child: Text("Kaygı belirtileri")),
+                          DropdownMenuItem(
+                            value: "mood",
+                            child: Text("Ruh hali değişimi"),
+                          ),
+                          DropdownMenuItem(
+                            value: "withdrawal",
+                            child: Text("İçe kapanma"),
+                          ),
+                          DropdownMenuItem(
+                            value: "aggression",
+                            child: Text("Agresif davranış"),
+                          ),
+                          DropdownMenuItem(
+                            value: "anxiety",
+                            child: Text("Kaygı belirtileri"),
+                          ),
                         ],
                         onChanged: (v) => setState(() => behavior = v),
                       ),
@@ -180,10 +193,22 @@ class _ObservationScreenState extends State<ObservationScreen> {
                         value: academic,
                         hint: "Durum seçiniz...",
                         items: const [
-                          DropdownMenuItem(value: "declining", child: Text("Notlarda düşüş")),
-                          DropdownMenuItem(value: "missing", child: Text("Eksik ödevler")),
-                          DropdownMenuItem(value: "attendance", child: Text("Devamsızlık")),
-                          DropdownMenuItem(value: "improvement", child: Text("Gelişim")),
+                          DropdownMenuItem(
+                            value: "declining",
+                            child: Text("Notlarda düşüş"),
+                          ),
+                          DropdownMenuItem(
+                            value: "missing",
+                            child: Text("Eksik ödevler"),
+                          ),
+                          DropdownMenuItem(
+                            value: "attendance",
+                            child: Text("Devamsızlık"),
+                          ),
+                          DropdownMenuItem(
+                            value: "improvement",
+                            child: Text("Gelişim"),
+                          ),
                         ],
                         onChanged: (v) => setState(() => academic = v),
                       ),
@@ -200,7 +225,8 @@ class _ObservationScreenState extends State<ObservationScreen> {
                         maxLines: 5,
                         style: const TextStyle(color: Colors.white),
                         decoration: InputDecoration(
-                          hintText: "Gözlemlenen olay veya detayları yazınız...",
+                          hintText:
+                              "Gözlemlenen olay veya detayları yazınız...",
                           hintStyle: const TextStyle(color: Colors.white38),
                           filled: true,
                           fillColor: const Color(0xFF101922),
@@ -214,16 +240,44 @@ class _ObservationScreenState extends State<ObservationScreen> {
                       const SizedBox(height: 24),
 
                       /// BUTONLAR
-                      ElevatedButton.icon(
+                      ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: success,
                           minimumSize: const Size(double.infinity, 54),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
-                        icon: const Icon(Icons.save),
-                        label: const Text("Gözlemi Kaydet"),
-                        onPressed: () {},
+                        onPressed: () async {
+                          if (student == null || behavior == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  "Lütfen öğrenci ve davranış seçin",
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+
+                          await FirebaseFirestore.instance
+                              .collection('OBSERVATIONS')
+                              .add({
+                                'studentId': student,
+                                'teacherId': 'teacher_test',
+                                'behavior': behavior,
+                                'academic': academic,
+                                'note': notesController.text,
+                                'createdAt': Timestamp.now(),
+                              });
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Observation saved")),
+                          );
+
+                          Navigator.pop(context);
+                        },
+                        child: const Text("Save Observation"),
                       ),
 
                       const SizedBox(height: 10),

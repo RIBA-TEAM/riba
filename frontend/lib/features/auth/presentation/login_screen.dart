@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../teacher/presentation/teacher_dashboard.dart';
 import '../../student/student_routes.dart';
 import '../../parent/parent_routes.dart'; // ✅ EKLENDİ
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 enum UserRole { student, parent, counselor }
 
@@ -18,6 +19,66 @@ class _LoginScreenState extends State<LoginScreen> {
 
   final identifierController = TextEditingController();
   final passwordController = TextEditingController();
+
+  Future<void> signIn(String userId, String password, String role) async {
+    final firestore = FirebaseFirestore.instance;
+
+    try {
+      if (role == "student") {
+        final studentDoc = await firestore
+            .collection('students')
+            .doc(userId)
+            .get();
+
+        if (!studentDoc.exists) {
+          print("Student not found");
+          return;
+        }
+
+        final data = studentDoc.data();
+
+        if (data?['password'] != password) {
+          print("Wrong password");
+          return;
+        }
+
+        Navigator.pushReplacementNamed(context, StudentRoutes.dashboard);
+        return;
+      }
+
+      final userDoc = await firestore.collection('USERS').doc(userId).get();
+
+      if (!userDoc.exists) {
+        print("User not found");
+        return;
+      }
+
+      final data = userDoc.data();
+
+      if (data?['password'] != password) {
+        print("Wrong password");
+        return;
+      }
+
+      if (data?['role'].toString().toLowerCase() != role.toLowerCase()) {
+        print("Wrong role");
+        return;
+      }
+
+      if (role == 'parent') {
+        Navigator.pushReplacementNamed(context, ParentRoutes.dashboard);
+      }
+
+      if (role == 'counselor') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => TeacherDashboard()),
+        );
+      }
+    } catch (e) {
+      print("Login error: $e");
+    }
+  }
 
   String getIdentifierHint() {
     switch (selectedRole) {
@@ -209,26 +270,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
-                              onPressed: () {
-                                if (selectedRole == UserRole.counselor) {
-                                  Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => TeacherDashboard(),
-                                    ),
-                                  );
-                                } else if (selectedRole == UserRole.student) {
-                                  Navigator.pushReplacementNamed(
-                                    context,
-                                    StudentRoutes.dashboard,
-                                  );
-                                } else if (selectedRole == UserRole.parent) {
-                                  // ✅ EKLENDİ
-                                  Navigator.pushReplacementNamed(
-                                    context,
-                                    ParentRoutes.dashboard,
-                                  );
-                                }
+                              onPressed: () async {
+                                await signIn(
+                                  identifierController.text,
+                                  passwordController.text,
+                                  selectedRole.name,
+                                );
                               },
                               child: const Text(
                                 "Sign In",
