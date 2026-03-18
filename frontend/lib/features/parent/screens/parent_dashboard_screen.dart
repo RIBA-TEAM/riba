@@ -12,11 +12,29 @@ class ParentDashboardScreen extends StatelessWidget {
     const bgDark = Color(0xFF101C22);
     const tealDeep = Color(0xFF0D4D5E);
 
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+
+    final String parentId = args?['parentId'] ?? '';
+    final String parentName = args?['parentName'] ?? 'Parent';
+    final String studentId = args?['studentId'] ?? '';
+    final String studentName = args?['studentName'] ?? 'Student';
+    final String studentClass = args?['studentClass'] ?? '-';
+    final String schoolNo = args?['schoolNo'] ?? '-';
+
+    final Map<String, dynamic> parentArgs = {
+      'parentId': parentId,
+      'parentName': parentName,
+      'studentId': studentId,
+      'studentName': studentName,
+      'studentClass': studentClass,
+      'schoolNo': schoolNo,
+    };
+
     return Scaffold(
       backgroundColor: bgDark,
       body: Stack(
         children: [
-          // Gradient background
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -29,24 +47,18 @@ class ParentDashboardScreen extends StatelessWidget {
 
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.only(bottom: 96), // bottom nav boşluğu
+              padding: const EdgeInsets.only(bottom: 96),
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Top App Bar
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          ParentGlassButton(
-                            onTap: () {
-                              // TODO: drawer / menu
-                            },
-                            icon: Icons.menu,
-                          ),
+                          const SizedBox(width: 48),
                           const Text(
                             'RIBA',
                             style: TextStyle(
@@ -58,7 +70,7 @@ class ParentDashboardScreen extends StatelessWidget {
                           ),
                           ParentGlassButton(
                             onTap: () {
-                              // TODO: notifications
+                              // TODO: notifications screen
                             },
                             icon: Icons.notifications_none_rounded,
                           ),
@@ -66,50 +78,94 @@ class ParentDashboardScreen extends StatelessWidget {
                       ),
                     ),
 
-                    // Welcome
-                    const Padding(
-                      padding: EdgeInsets.fromLTRB(24, 16, 24, 16),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Welcome to the RIBA\nSupport Portal',
-                            style: TextStyle(
+                            'Welcome, $parentName',
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 30,
                               fontWeight: FontWeight.w800,
                               height: 1.1,
                             ),
                           ),
-                          SizedBox(height: 10),
+                          const SizedBox(height: 10),
                           Text(
-                            'Your central hub for school support updates.',
-                            style: TextStyle(
+                            'You can view the latest updates and support information for $studentName.',
+                            style: const TextStyle(
                               color: Color(0xCCFFFFFF),
                               fontSize: 14,
                               fontWeight: FontWeight.w300,
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+
+                          Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.10),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.school_outlined,
+                                  color: Colors.white,
+                                  size: 22,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        studentName,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Class: $studentClass   •   School No: $schoolNo',
+                                        style: const TextStyle(
+                                          color: Color(0xCCFFFFFF),
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w400,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
                     ),
 
-                    // Primary Status Card
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: ParentPrimaryStatusCard(
                         imageAsset: 'assets/images/dashboard.jpg',
                         statusPillText: 'CURRENT STATUS',
-                        title: 'Support process active',
-                        subtitle: 'Guidance follow-up ongoing',
-                        buttonText: 'View Full Details',
+                        title: '$studentName is currently being supported',
+                        subtitle: 'Guidance follow-up is ongoing',
+                        buttonText: 'View Details',
                         showGreenDot: true,
                       ),
                     ),
 
                     const SizedBox(height: 18),
 
-                    // Navigation Section Title
                     const Padding(
                       padding: EdgeInsets.fromLTRB(24, 0, 24, 10),
                       child: Text(
@@ -123,7 +179,6 @@ class ParentDashboardScreen extends StatelessWidget {
                       ),
                     ),
 
-                    // Navigation Cards
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Column(
@@ -131,27 +186,41 @@ class ParentDashboardScreen extends StatelessWidget {
                           ParentNavTile(
                             icon: Icons.mail_outline_rounded,
                             title: 'Messages from School',
-                            subtitle: 'Check recent updates from counselors.',
+                            subtitle: 'Check recent updates and observations.',
                             onTap: () {
-                              Navigator.pushNamed(context, '/parent/messages');
+                              Navigator.pushNamed(
+                                context,
+                                '/parent/messages',
+                                arguments: parentArgs,
+                              );
                             },
                           ),
                           const SizedBox(height: 12),
                           ParentNavTile(
-                            icon: Icons.info_outline_rounded,
-                            title: 'System Information',
-                            subtitle: 'Learn more about the RIBA framework.',
+                            icon: Icons.calendar_month_outlined,
+                            title: 'Calendar',
+                            subtitle:
+                                'View meetings, activities, and upcoming dates.',
                             onTap: () {
-                              Navigator.pushNamed(context, '/parent/system');
+                              Navigator.pushNamed(
+                                context,
+                                '/parent/calendar',
+                                arguments: parentArgs,
+                              );
                             },
                           ),
                           const SizedBox(height: 12),
                           ParentNavTile(
                             icon: Icons.person_outline_rounded,
-                            title: 'Profile & Settings',
-                            subtitle: 'Manage your notification preferences.',
+                            title: 'Profile',
+                            subtitle:
+                                'Manage your account and notification settings.',
                             onTap: () {
-                              Navigator.pushNamed(context, '/parent/profile');
+                              Navigator.pushNamed(
+                                context,
+                                '/parent/profile',
+                                arguments: parentArgs,
+                              );
                             },
                           ),
                         ],
@@ -165,15 +234,13 @@ class ParentDashboardScreen extends StatelessWidget {
             ),
           ),
 
-          // Bottom Navigation
-          const Positioned(
+          Positioned(
             left: 0,
             right: 0,
             bottom: 0,
-            child: ParentBottomNav(selectedIndex: 0),
+            child: ParentBottomNav(selectedIndex: 0, args: parentArgs),
           ),
 
-          // iOS Home indicator
           Positioned(
             left: MediaQuery.of(context).size.width / 2 - 64,
             bottom: 6,

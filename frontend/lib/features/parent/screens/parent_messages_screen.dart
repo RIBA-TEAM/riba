@@ -1,5 +1,8 @@
 import 'dart:ui';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'new_parent_message_screen.dart';
+import '../widgets/parent_bottom_nav.dart';
 
 class ParentMessagesScreen extends StatefulWidget {
   const ParentMessagesScreen({super.key});
@@ -11,69 +14,212 @@ class ParentMessagesScreen extends StatefulWidget {
 class _ParentMessagesScreenState extends State<ParentMessagesScreen> {
   int _selectedTab = 0; // 0: Guidance Office, 1: Teachers, 2: General
 
-  // Demo data (şimdilik statik) — sonra API bağlarız
-  final List<_MessageItem> _messages = const [
-    _MessageItem(
-      sender: "School Guidance Office",
-      timeText: "10:45 AM",
-      title: "New update on your child's progress",
-      preview:
-          "An update regarding our recent meeting. We've seen positive engagement in the last sessions...",
-      avatarUrl:
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuC724g62cwG4-C6SG-az9yJwsKGDRhXL09geuqsS8gIk_eRll5GAmo6RgHnH97zhJcj202G1D8_C5-iAFqNZ7s9eQduBDtrfiEy9ZgZpnjl6PnCmjvrr33fyzNAv_S2UU5aRrJ1Zl7Fkhk5EJFFrIidh19IksA9tOuQ83Ymwn73MZQunBqzAtoqq4mXeuprRvIb08UKa2OeIJUgJ06ypp0rP0qOFTVvG6iJNnz1O0ClCcYcmc-ECNG0SX7xCMp8jrK0Mw6TIy5gt8tW",
-      isUnread: true,
-    ),
-    _MessageItem(
-      sender: "Dr. Sarah Miller",
-      timeText: "9:15 AM",
-      title: "Follow-up regarding today's session",
-      preview:
-          "I wanted to share some resources we discussed this morning for home practice...",
-      avatarUrl:
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuAErlA2HrgqVb9B6ojSeDpsI3WJYgRjei3MnkfCl3Kzk_FWYmaq7zi5H7TjEb12-aMR4Ho-i2bWD1NABWJNXMuzpwFqeK5jssFCejvJilxdnXVk6w-s5NvdP3Lfws66tcVpFsuieVYu7jkL4nPNr9t-KaAiLVp_K-qygPCgh-zQ-FAP5YEm0p9N0GdDYS9YiYGNsnkK0XR8v5uBpv_hJyfyBkny_1kObWfoCd3uDlRo7p_JS2zHNd4fJnwCR8JW85bAgrQvim_MRFyI",
-      isUnread: true,
-    ),
-    _MessageItem(
-      sender: "School Guidance Office",
-      timeText: "Yesterday",
-      title: "Semester Progress Report",
-      preview: "We've updated the progress report for the current semester...",
-      avatarUrl:
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuC4FGCloykuxpXXF_1Ou0IYH0glORqmkOAMKi5tKPGcp-ZLUIN3WEBPFl7DUDnJiBhXVxSh0fyG26agc4LrFqaEFqjjiNH2CUhdfnp4ahY0_dmUXCMjhVYpYorqIdxi26MzIqUXam3iUmUCo0Cv3KQ0L_UD0Lu1GOKy4FDaZnjfg0qh6erxYY2ESQ5lNVb46xKqLcNguLxaZcMZ-u0juFn5gTuDkP7li_3K_kQghOL3G0y7fOPqr2hQJOTfLxcTwSqc_RdAEiNIzJYd",
-      isUnread: false,
-    ),
-    _MessageItem(
-      sender: "Counseling Department",
-      timeText: "Oct 24",
-      title: "Upcoming Parents' Workshop",
-      preview:
-          "Invitation to the upcoming digital wellbeing workshop for parents...",
-      avatarUrl:
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuCt-CPcuMppROS2vyrX8ylWdMYx6SvvaqC5gtuSzBtKuTYK4Pz5wAoqA6kiv7A-fkFkaZTdzhBVmLqubJTH8ODjnEJyEjnATl_TtjdSA66gjaPi-NTB0D1wB1Y_YVmBJYuBmUSkDcyxeYZrI21mE8187AnT8e8A4RfpZyc5-JZj7BvckVoRGi2xDXwEB6Ao3sqnDs7oRGsORSUCm2V4pSGBAiOjhgNAReAKxQ3ZlXNlETS6l2rL0dOHa86q8wsgXBkLFb0K8MGtYat1",
-      isUnread: false,
-    ),
-    _MessageItem(
-      sender: "Dr. Sarah Miller",
-      timeText: "Oct 22",
-      title: "Initial Consultation Meeting",
-      preview:
-          "Thank you for taking the time to meet with us yesterday. Here are the notes...",
-      avatarUrl:
-          "https://lh3.googleusercontent.com/aida-public/AB6AXuDoEXE5GXXOvZeKbXOZvsGAME-BcnFG_Qbhj3WGinztg1fLL1QoGWZ0u4sDjfB1bYAobclHLAHe7D_yXDmybfSJlpTh-ehAekFuVJSpOehqKdfen2fwuD0c0i0bVkKUf4CVReVWzbKLL51aGu69C-BNh99mxAspr4SGc3V89rJA-xHeBHD_srve_fQ688jDuRkx_-YcIsgmhR9ju1sHzfVWuFmxhlx8LKKE-GeSZRPyJ5rq4RZBnyDVe_jVk2b9kbQlmkpGOuBXF69A",
-      isUnread: false,
-    ),
-  ];
+  Stream<List<_MessageItem>> _getMessages({
+    required String studentId,
+    required String parentId,
+  }) {
+    return FirebaseFirestore.instance
+        .collection('observations')
+        .where('student_id', isEqualTo: studentId)
+        .where('parent_id', isEqualTo: parentId)
+        .snapshots()
+        .asyncMap((snapshot) async {
+          final items = await Future.wait(
+            snapshot.docs.map((doc) async {
+              final data = doc.data();
+              final teacherId = (data['teacher_id'] ?? '').toString();
+
+              String senderName = _parseSender(data);
+
+              if (teacherId.isNotEmpty) {
+                try {
+                  final teacherDoc = await FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(teacherId)
+                      .get();
+
+                  if (teacherDoc.exists) {
+                    final teacherData = teacherDoc.data()!;
+                    senderName = (teacherData['name'] ?? senderName).toString();
+                  }
+                } catch (_) {}
+              }
+
+              final DateTime createdAt = _parseDate(
+                data['created_at'] ??
+                    data['createdAt'] ??
+                    data['timestamp'] ??
+                    data['date'],
+              );
+
+              return _MessageItem(
+                id: doc.id,
+                category: _parseCategory(data),
+                sender: senderName,
+                timeText: _formatTime(createdAt),
+                title: _parseTitle(data),
+                preview: _parsePreview(data),
+                avatar: _parseAvatar(data),
+                isUnread: _parseUnread(data),
+                createdAt: createdAt,
+              );
+            }).toList(),
+          );
+
+          items.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          return items;
+        });
+  }
+
+  static DateTime _parseDate(dynamic raw) {
+    if (raw is Timestamp) return raw.toDate();
+    if (raw is DateTime) return raw;
+    if (raw is String) return DateTime.tryParse(raw) ?? DateTime(2000);
+    return DateTime(2000);
+  }
+
+  static MessageCategory _parseCategory(Map<String, dynamic> data) {
+    final source =
+        (data['source'] ??
+                data['sender_role'] ??
+                data['senderRole'] ??
+                data['type'] ??
+                data['category'] ??
+                '')
+            .toString()
+            .toLowerCase();
+
+    if (source.contains('guidance') ||
+        source.contains('counselor') ||
+        source.contains('rehber')) {
+      return MessageCategory.guidance;
+    }
+
+    if (source.contains('teacher') || source.contains('ogretmen')) {
+      return MessageCategory.teacher;
+    }
+
+    return MessageCategory.general;
+  }
+
+  static String _parseSender(Map<String, dynamic> data) {
+    return (data['sender_name'] ??
+            data['senderName'] ??
+            data['teacher_name'] ??
+            data['author'] ??
+            data['source'] ??
+            'School')
+        .toString();
+  }
+
+  static String _parseTitle(Map<String, dynamic> data) {
+    return (data['title'] ??
+            data['subject'] ??
+            data['headline'] ??
+            'New Message')
+        .toString();
+  }
+
+  static String _parsePreview(Map<String, dynamic> data) {
+    return (data['message'] ??
+            data['content'] ??
+            data['text'] ??
+            data['observation'] ??
+            data['note'] ??
+            'No message content.')
+        .toString();
+  }
+
+  static String _parseAvatar(Map<String, dynamic> data) {
+    final source =
+        (data['source'] ??
+                data['sender_role'] ??
+                data['senderRole'] ??
+                data['type'] ??
+                data['category'] ??
+                '')
+            .toString()
+            .toLowerCase();
+
+    if (source.contains('guidance') ||
+        source.contains('counselor') ||
+        source.contains('rehber')) {
+      return "🧑‍🏫";
+    }
+
+    if (source.contains('teacher') || source.contains('ogretmen')) {
+      return "👩";
+    }
+
+    return "🏛️";
+  }
+
+  static bool _parseUnread(Map<String, dynamic> data) {
+    if (data['is_read'] == false) return true;
+    if (data['isUnread'] == true) return true;
+    return false;
+  }
+
+  static String _formatTime(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+
+    if (difference.inDays == 0) {
+      final hour = date.hour.toString().padLeft(2, '0');
+      final minute = date.minute.toString().padLeft(2, '0');
+      return '$hour:$minute';
+    }
+
+    if (difference.inDays == 1) {
+      return 'Yesterday';
+    }
+
+    if (difference.inDays < 7) {
+      return '${difference.inDays}d ago';
+    }
+
+    return '${date.day}/${date.month}/${date.year}';
+  }
+
+  List<_MessageItem> _filterMessages(List<_MessageItem> messages) {
+    switch (_selectedTab) {
+      case 0:
+        return messages
+            .where((m) => m.category == MessageCategory.guidance)
+            .toList();
+      case 1:
+        return messages
+            .where((m) => m.category == MessageCategory.teacher)
+            .toList();
+      case 2:
+        return messages
+            .where((m) => m.category == MessageCategory.general)
+            .toList();
+      default:
+        return messages;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     const primary = Color(0xFF1193D4);
     const tealDeep = Color(0xFF0D4D5E);
+    const bgDark = Color(0xFF101C22);
+
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+
+    final String parentId = args?['parentId'] ?? '';
+    final String parentName = args?['parentName'] ?? 'Parent';
+    final String studentId = args?['studentId'] ?? '';
+    final String studentName = args?['studentName'] ?? 'Student';
+    final String studentClass = args?['studentClass'] ?? '-';
+    final String schoolNo = args?['schoolNo'] ?? '-';
 
     return Scaffold(
-      backgroundColor: const Color(0xFF101C22),
+      backgroundColor: bgDark,
       body: Stack(
         children: [
-          // Gradient background
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -83,12 +229,9 @@ class _ParentMessagesScreenState extends State<ParentMessagesScreen> {
               ),
             ),
           ),
-
-          // Content
           SafeArea(
             child: Stack(
               children: [
-                // Scrollable area
                 Positioned.fill(
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
@@ -96,9 +239,8 @@ class _ParentMessagesScreenState extends State<ParentMessagesScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Sticky-like header area (we keep it visually same)
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 18, 16, 14),
+                          padding: const EdgeInsets.fromLTRB(16, 18, 16, 12),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -110,19 +252,49 @@ class _ParentMessagesScreenState extends State<ParentMessagesScreen> {
                                 "Messages",
                                 style: TextStyle(
                                   color: Colors.white,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.w700,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w800,
                                 ),
                               ),
-                              _ProfileAvatar(
-                                imageUrl:
-                                    "https://lh3.googleusercontent.com/aida-public/AB6AXuCTl9I7tnuczE87gTmz9R47ogfTj60Xs5wkBmzgTJz4X0vAY51uj78W9rG54AjRnLRzJQIU6eT-Sd-TRerT2ROlfB5WO7JGmA41nooEZTQ4AcRHufbLngbvKf0vgdoMSFAyvRFkODCoK4hP_MX_4fbuZD1APQi7ZC0fRNt45v7jPHZ3DNtG8DovGF8hDB6B9oUateKoWqkjhI0A-tuEAEXMEFysVGRqkZlO3wLBsUWgsgjmtLMF14sGLNRovIS2863glIQ3xK8dElUw",
+                              const SizedBox(width: 40),
+                            ],
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Messages for $studentName",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.w800,
+                                  height: 1.1,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                "Parent: $parentName",
+                                style: const TextStyle(
+                                  color: Color(0xCCFFFFFF),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                "Class: $studentClass   •   School No: $schoolNo",
+                                style: const TextStyle(
+                                  color: Color(0xB3FFFFFF),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w400,
+                                ),
                               ),
                             ],
                           ),
                         ),
-
-                        // Tabs
                         Padding(
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                           child: _TabBarGlass(
@@ -135,38 +307,167 @@ class _ParentMessagesScreenState extends State<ParentMessagesScreen> {
                             ],
                           ),
                         ),
-
-                        // Message list
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Column(
-                            children: _messages
-                                .map(
-                                  (m) => Padding(
-                                    padding: const EdgeInsets.only(bottom: 12),
-                                    child: _MessageCard(
-                                      item: m,
-                                      onTap: () {
-                                        // TODO: message detail screen
-                                      },
+                        if (studentId.isEmpty || parentId.isEmpty)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(18),
+                              ),
+                              child: const Text(
+                                "Parent ID or Student ID not found.",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          )
+                        else
+                          StreamBuilder<List<_MessageItem>>(
+                            stream: _getMessages(
+                              studentId: studentId,
+                              parentId: parentId,
+                            ),
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return const Padding(
+                                  padding: EdgeInsets.only(top: 40),
+                                  child: Center(
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
                                     ),
                                   ),
-                                )
-                                .toList(),
+                                );
+                              }
+
+                              if (snapshot.hasError) {
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                  ),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(20),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.12),
+                                      borderRadius: BorderRadius.circular(18),
+                                    ),
+                                    child: Text(
+                                      "An error occurred: ${snapshot.error}",
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }
+
+                              final allMessages = snapshot.data ?? [];
+                              final filteredMessages = _filterMessages(
+                                allMessages,
+                              );
+
+                              if (allMessages.isEmpty) {
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                  ),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(20),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.12),
+                                      borderRadius: BorderRadius.circular(18),
+                                    ),
+                                    child: const Text(
+                                      "There are no messages for this student yet.",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }
+
+                              if (filteredMessages.isEmpty) {
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                  ),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(20),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.12),
+                                      borderRadius: BorderRadius.circular(18),
+                                    ),
+                                    child: const Text(
+                                      "There are no messages in this category yet.",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }
+
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
+                                child: Column(
+                                  children: filteredMessages
+                                      .map(
+                                        (m) => Padding(
+                                          padding: const EdgeInsets.only(
+                                            bottom: 12,
+                                          ),
+                                          child: _MessageCard(
+                                            item: m,
+                                            onTap: () {},
+                                          ),
+                                        ),
+                                      )
+                                      .toList(),
+                                ),
+                              );
+                            },
                           ),
-                        ),
                       ],
                     ),
                   ),
                 ),
-
-                // Floating Action Button (edit_square)
                 Positioned(
                   right: 18,
                   bottom: 110,
                   child: GestureDetector(
                     onTap: () {
-                      // TODO: compose new message / note
+                      if (parentId.isEmpty || studentId.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Parent ID or Student ID is missing.',
+                            ),
+                          ),
+                        );
+                        return;
+                      }
+
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => NewParentMessageScreen(
+                            parentId: parentId,
+                            parentName: parentName,
+                            studentId: studentId,
+                            studentName: studentName,
+                          ),
+                        ),
+                      );
                     },
                     child: Container(
                       width: 56,
@@ -190,13 +491,21 @@ class _ParentMessagesScreenState extends State<ParentMessagesScreen> {
                     ),
                   ),
                 ),
-
-                // Bottom Navigation Bar (glass)
-                const Positioned(
+                Positioned(
                   left: 0,
                   right: 0,
                   bottom: 0,
-                  child: _BottomNavGlass(selectedIndex: 1),
+                  child: ParentBottomNav(
+                    selectedIndex: 1,
+                    args: {
+                      'parentId': parentId,
+                      'parentName': parentName,
+                      'studentId': studentId,
+                      'studentName': studentName,
+                      'studentClass': studentClass,
+                      'schoolNo': schoolNo,
+                    },
+                  ),
                 ),
               ],
             ),
@@ -207,7 +516,7 @@ class _ParentMessagesScreenState extends State<ParentMessagesScreen> {
   }
 }
 
-/* ----------------------------- UI WIDGETS ----------------------------- */
+enum MessageCategory { guidance, teacher, general }
 
 class _RoundGlassIconButton extends StatelessWidget {
   const _RoundGlassIconButton({required this.icon, required this.onTap});
@@ -234,27 +543,6 @@ class _RoundGlassIconButton extends StatelessWidget {
             ),
             child: Icon(icon, color: Colors.white, size: 18),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ProfileAvatar extends StatelessWidget {
-  const _ProfileAvatar({required this.imageUrl});
-  final String imageUrl;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.white.withOpacity(0.30), width: 2),
-        image: DecorationImage(
-          image: NetworkImage(imageUrl),
-          fit: BoxFit.cover,
         ),
       ),
     );
@@ -341,11 +629,9 @@ class _MessageCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const primary = Color(0xFF1193D4);
-
     final isUnread = item.isUnread;
 
     if (isUnread) {
-      // Unread glass-card with left primary bar + dot
       return InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(18),
@@ -380,7 +666,7 @@ class _MessageCard extends StatelessWidget {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _Avatar(url: item.avatarUrl),
+                        _Avatar(emoji: item.avatar),
                         const SizedBox(width: 12),
                         Expanded(
                           child: _MessageTexts(
@@ -419,7 +705,6 @@ class _MessageCard extends StatelessWidget {
       );
     }
 
-    // Read card (white/70 blur, slightly faded)
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(18),
@@ -438,7 +723,7 @@ class _MessageCard extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _Avatar(url: item.avatarUrl, grayscale: true),
+                  _Avatar(emoji: item.avatar, faded: true),
                   const SizedBox(width: 12),
                   Expanded(
                     child: _MessageTexts(
@@ -461,48 +746,26 @@ class _MessageCard extends StatelessWidget {
 }
 
 class _Avatar extends StatelessWidget {
-  const _Avatar({required this.url, this.grayscale = false});
-  final String url;
-  final bool grayscale;
+  const _Avatar({required this.emoji, this.faded = false});
+
+  final String emoji;
+  final bool faded;
 
   @override
   Widget build(BuildContext context) {
-    final img = Container(
-      width: 56,
-      height: 56,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-        image: DecorationImage(image: NetworkImage(url), fit: BoxFit.cover),
+    return Opacity(
+      opacity: faded ? 0.75 : 1,
+      child: Container(
+        width: 56,
+        height: 56,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: const Color(0xFFE5E7EB),
+          border: Border.all(color: Colors.white, width: 1.2),
+        ),
+        child: Text(emoji, style: const TextStyle(fontSize: 28)),
       ),
-    );
-
-    if (!grayscale) return img;
-
-    return ColorFiltered(
-      colorFilter: const ColorFilter.matrix(<double>[
-        0.7,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.7,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.7,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        1.0,
-        0.0,
-      ]),
-      child: img,
     );
   }
 }
@@ -584,133 +847,26 @@ class _MessageTexts extends StatelessWidget {
   }
 }
 
-class _BottomNavGlass extends StatelessWidget {
-  const _BottomNavGlass({required this.selectedIndex});
-  final int selectedIndex;
-
-  @override
-  Widget build(BuildContext context) {
-    const primary = Color(0xFF1193D4);
-
-    Widget item({
-      required int index,
-      required IconData icon,
-      required String label,
-      bool showBadge = false,
-      required VoidCallback onTap,
-    }) {
-      final active = index == selectedIndex;
-      final color = active ? primary : const Color(0xFF9CA3AF);
-
-      return Expanded(
-        child: InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Icon(icon, color: color, size: 28),
-                    if (showBadge)
-                      Positioned(
-                        top: -2,
-                        right: -2,
-                        child: Container(
-                          width: 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  label.toUpperCase(),
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 10,
-                    fontWeight: active ? FontWeight.w800 : FontWeight.w600,
-                    letterSpacing: 1.0,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    return ClipRRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.85),
-            border: Border(
-              top: BorderSide(color: Colors.white.withOpacity(0.20), width: 1),
-            ),
-          ),
-          child: Row(
-            children: [
-              item(
-                index: 0,
-                icon: Icons.home_rounded,
-                label: "Home",
-                onTap: () => Navigator.pushNamed(context, '/parent/dashboard'),
-              ),
-              item(
-                index: 1,
-                icon: Icons.chat_bubble_rounded,
-                label: "Messages",
-                showBadge: true,
-                onTap: () {}, // zaten buradasın
-              ),
-              item(
-                index: 2,
-                icon: Icons.event,
-                label: "Calendar",
-                onTap: () {
-                  // TODO: /parent/calendar
-                },
-              ),
-              item(
-                index: 3,
-                icon: Icons.person,
-                label: "Profile",
-                onTap: () => Navigator.pushNamed(context, '/parent/profile'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/* ----------------------------- DATA MODEL ----------------------------- */
-
 class _MessageItem {
+  final String id;
+  final MessageCategory category;
   final String sender;
   final String timeText;
   final String title;
   final String preview;
-  final String avatarUrl;
+  final String avatar;
   final bool isUnread;
+  final DateTime createdAt;
 
   const _MessageItem({
+    required this.id,
+    required this.category,
     required this.sender,
     required this.timeText,
     required this.title,
     required this.preview,
-    required this.avatarUrl,
+    required this.avatar,
     required this.isUnread,
+    required this.createdAt,
   });
 }

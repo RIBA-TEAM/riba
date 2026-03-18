@@ -5,6 +5,7 @@ import 'package:frontend/features/teacher/presentation/observation_entry_screen.
 import 'settings.dart';
 import 'package:frontend/features/teacher/presentation/notifications_page.dart';
 
+
 class TeacherDashboard extends StatefulWidget {
   const TeacherDashboard({super.key});
 
