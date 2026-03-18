@@ -2,8 +2,16 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 class ParentBottomNav extends StatelessWidget {
-  const ParentBottomNav({super.key, required this.selectedIndex});
+  const ParentBottomNav({
+    super.key,
+    required this.selectedIndex,
+    required this.onItemSelected, // 🔥 EKLENDİ
+  });
+
   final int selectedIndex;
+
+  /// 🔥 EKLENDİ
+  final Function(int) onItemSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -16,6 +24,7 @@ class ParentBottomNav extends StatelessWidget {
       required VoidCallback onTap,
     }) {
       final bool active = index == selectedIndex;
+
       return Expanded(
         child: InkWell(
           onTap: onTap,
@@ -81,33 +90,25 @@ class ParentBottomNav extends StatelessWidget {
                 index: 0,
                 icon: Icons.home_rounded,
                 label: 'Home',
-                onTap: () {
-                  // zaten home
-                },
+                onTap: () => onItemSelected(0), // 🔥
               ),
               item(
                 index: 1,
                 icon: Icons.chat_bubble_outline_rounded,
                 label: 'Chat',
-                onTap: () {
-                  // TODO: /parent/chat (ileride)
-                },
+                onTap: () => onItemSelected(1), // 🔥
               ),
               item(
                 index: 2,
                 icon: Icons.calendar_today_outlined,
                 label: 'Calendar',
-                onTap: () {
-                  // TODO: /parent/calendar (ileride)
-                },
+                onTap: () => onItemSelected(2), // 🔥
               ),
               item(
                 index: 3,
                 icon: Icons.settings_outlined,
                 label: 'Settings',
-                onTap: () {
-                  Navigator.pushNamed(context, '/parent/profile');
-                },
+                onTap: () => onItemSelected(3), // 🔥
               ),
             ],
           ),

@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../../auth/presentation/login_screen.dart';
 
 class ParentProfileSettingsScreen extends StatefulWidget {
   const ParentProfileSettingsScreen({super.key});
@@ -337,8 +338,13 @@ class _ParentProfileSettingsScreenState
                                   ),
                                   _LogoutRow(
                                     onTap: () {
-                                      // TODO: logout -> back to Login
-                                      // Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false);
+                                      Navigator.pushAndRemoveUntil(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => const LoginScreen(),
+                                        ),
+                                        (route) => false,
+                                      );
                                     },
                                   ),
                                 ],
@@ -364,14 +370,6 @@ class _ParentProfileSettingsScreenState
                       ],
                     ),
                   ),
-                ),
-
-                // Bottom navigation (HTML’deki 5 ikonlu)
-                const Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: _ProfileBottomNav(selectedIndex: 2),
                 ),
               ],
             ),

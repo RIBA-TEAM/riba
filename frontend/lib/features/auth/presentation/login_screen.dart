@@ -2,7 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../teacher/presentation/teacher_dashboard.dart';
 import '../../student/student_routes.dart';
-import '../../parent/parent_routes.dart'; // ✅ EKLENDİ
+import '../../parent/parent_routes.dart';
 
 enum UserRole { student, parent, counselor }
 
@@ -19,12 +19,14 @@ class _LoginScreenState extends State<LoginScreen> {
   final identifierController = TextEditingController();
   final passwordController = TextEditingController();
 
+  final _formKey = GlobalKey<FormState>();
+
   String getIdentifierHint() {
     switch (selectedRole) {
       case UserRole.student:
         return "Öğrenci Numarası";
       case UserRole.parent:
-        return "Email or Ebeveyn No";
+        return "Email";
       case UserRole.counselor:
         return "Okul Emaili";
     }
@@ -52,12 +54,59 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  String? validateIdentifier(String? value) {
+    if (value == null || value.isEmpty) {
+      return "Bu alan boş bırakılamaz";
+    }
+
+    if (selectedRole == UserRole.student) {
+      if (value.length < 4) {
+        return "Öğrenci numarası geçersiz";
+      }
+    }
+
+    if (selectedRole == UserRole.parent || selectedRole == UserRole.counselor) {
+      if (!value.contains("@")) {
+        return "Geçerli bir email giriniz";
+      }
+    }
+
+    return null;
+  }
+
+  String? validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return "Şifre gerekli";
+    }
+
+    if (value.length < 6) {
+      return "Şifre en az 6 karakter olmalı";
+    }
+
+    return null;
+  }
+
+  void login() {
+    if (_formKey.currentState!.validate()) {
+      if (selectedRole == UserRole.counselor) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => TeacherDashboard()),
+        );
+      } else if (selectedRole == UserRole.student) {
+        Navigator.pushReplacementNamed(context, StudentRoutes.dashboard);
+      } else if (selectedRole == UserRole.parent) {
+        Navigator.pushReplacementNamed(context, ParentRoutes.dashboard);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
-          gradient: const LinearGradient(
+          gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [Color(0xFF042F2E), Color(0xFF064E3B), Color(0xFF1E40AF)],
@@ -69,7 +118,6 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                /// 🔵 LOGO + TITLE (YUKARIDA)
                 Column(
                   children: const [
                     Icon(
@@ -92,7 +140,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 const SizedBox(height: 40),
 
-                /// 🔵 BLUR LOGIN CARD
                 ClipRRect(
                   borderRadius: BorderRadius.circular(20),
                   child: BackdropFilter(
@@ -104,139 +151,126 @@ class _LoginScreenState extends State<LoginScreen> {
                         color: Colors.white.withOpacity(0.92),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            getTitle(),
-                            style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              getTitle(),
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
 
-                          const SizedBox(height: 24),
+                            const SizedBox(height: 24),
 
-                          /// ROLE SELECTOR
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade200,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              children: UserRole.values.map((role) {
-                                final isSelected = role == selectedRole;
+                            /// ROLE SELECTOR
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade200,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                children: UserRole.values.map((role) {
+                                  final isSelected = role == selectedRole;
 
-                                return Expanded(
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      setState(() {
-                                        selectedRole = role;
-                                        identifierController.clear();
-                                      });
-                                    },
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 12,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: isSelected
-                                            ? const Color(0xFF196EE6)
-                                            : Colors.transparent,
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Text(
-                                        role.name.toUpperCase(),
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.w600,
+                                  return Expanded(
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          selectedRole = role;
+                                          identifierController.clear();
+                                        });
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 12,
+                                        ),
+                                        decoration: BoxDecoration(
                                           color: isSelected
-                                              ? Colors.white
-                                              : Colors.black54,
+                                              ? const Color(0xFF196EE6)
+                                              : Colors.transparent,
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          role.name.toUpperCase(),
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            color: isSelected
+                                                ? Colors.white
+                                                : Colors.black54,
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                );
-                              }).toList(),
-                            ),
-                          ),
-
-                          const SizedBox(height: 24),
-
-                          /// IDENTIFIER FIELD
-                          TextField(
-                            controller: identifierController,
-                            keyboardType: selectedRole == UserRole.student
-                                ? TextInputType.number
-                                : TextInputType.emailAddress,
-                            decoration: InputDecoration(
-                              prefixIcon: Icon(getIdentifierIcon()),
-                              hintText: getIdentifierHint(),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                  );
+                                }).toList(),
                               ),
                             ),
-                          ),
 
-                          const SizedBox(height: 16),
+                            const SizedBox(height: 24),
 
-                          /// PASSWORD FIELD
-                          TextField(
-                            controller: passwordController,
-                            obscureText: true,
-                            decoration: InputDecoration(
-                              prefixIcon: const Icon(Icons.lock_outline),
-                              hintText: "Password",
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 24),
-
-                          /// LOGIN BUTTON
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF196EE6),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                ),
-                                shape: RoundedRectangleBorder(
+                            /// IDENTIFIER
+                            TextFormField(
+                              controller: identifierController,
+                              keyboardType: selectedRole == UserRole.student
+                                  ? TextInputType.number
+                                  : TextInputType.emailAddress,
+                              validator: validateIdentifier,
+                              decoration: InputDecoration(
+                                prefixIcon: Icon(getIdentifierIcon()),
+                                hintText: getIdentifierHint(),
+                                border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
-                              onPressed: () {
-                                if (selectedRole == UserRole.counselor) {
-                                  Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => TeacherDashboard(),
-                                    ),
-                                  );
-                                } else if (selectedRole == UserRole.student) {
-                                  Navigator.pushReplacementNamed(
-                                    context,
-                                    StudentRoutes.dashboard,
-                                  );
-                                } else if (selectedRole == UserRole.parent) {
-                                  // ✅ EKLENDİ
-                                  Navigator.pushReplacementNamed(
-                                    context,
-                                    ParentRoutes.dashboard,
-                                  );
-                                }
-                              },
-                              child: const Text(
-                                "Sign In",
-                                style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            /// PASSWORD
+                            TextFormField(
+                              controller: passwordController,
+                              obscureText: true,
+                              validator: validatePassword,
+                              decoration: InputDecoration(
+                                prefixIcon: const Icon(Icons.lock_outline),
+                                hintText: "Password",
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+
+                            const SizedBox(height: 24),
+
+                            /// LOGIN BUTTON
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF196EE6),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                onPressed: login,
+                                child: const Text(
+                                  "Sign In",
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
