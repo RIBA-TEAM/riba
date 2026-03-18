@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'screens/parent_calendar_screen.dart';
 import 'screens/parent_dashboard_screen.dart';
 import 'screens/parent_messages_screen.dart';
 import 'screens/parent_system_info_screen.dart';
@@ -7,6 +7,7 @@ import 'screens/parent_profile_settings_screen.dart';
 
 class ParentRoutes {
   // Route names
+  static const String calendar = '/parent/calendar';
   static const String dashboard = '/parent/dashboard';
   static const String messages = '/parent/messages';
   static const String system = '/parent/system';
@@ -18,6 +19,7 @@ class ParentRoutes {
     messages: (_) => const ParentMessagesScreen(),
     system: (_) => const ParentSystemInfoScreen(),
     profile: (_) => const ParentProfileSettingsScreen(),
+    calendar: (_) => const ParentCalendarScreen(),
   };
 
   /// Optional helper for safer navigation
@@ -35,6 +37,10 @@ class ParentRoutes {
         return MaterialPageRoute(
           builder: (_) => const ParentProfileSettingsScreen(),
         );
+         case calendar:
+      return MaterialPageRoute(
+        builder: (_) => const ParentCalendarScreen(),
+      );
       default:
         return MaterialPageRoute(
           builder: (_) => const _ParentUnknownRouteScreen(),

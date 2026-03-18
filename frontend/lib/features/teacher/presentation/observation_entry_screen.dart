@@ -15,6 +15,139 @@ class _ObservationScreenState extends State<ObservationScreen> {
 
   final notesController = TextEditingController();
 
+  bool _isSaving = false;
+
+  final Map<String, String> _behaviorLabels = {
+    'mood': 'Ruh hali değişimi',
+    'withdrawal': 'İçe kapanma',
+    'aggression': 'Agresif davranış',
+    'anxiety': 'Kaygı belirtileri',
+  };
+
+  final Map<String, String> _academicLabels = {
+    'declining': 'Notlarda düşüş',
+    'missing': 'Eksik ödevler',
+    'attendance': 'Devamsızlık',
+    'improvement': 'Gelişim',
+  };
+
+  String _buildTitle() {
+    if (behavior != null && _behaviorLabels.containsKey(behavior)) {
+      return _behaviorLabels[behavior]!;
+    }
+    if (academic != null && _academicLabels.containsKey(academic)) {
+      return _academicLabels[academic]!;
+    }
+    return 'Yeni Gözlem';
+  }
+
+  String _buildMessage() {
+    final parts = <String>[];
+
+    if (behavior != null && _behaviorLabels.containsKey(behavior)) {
+      parts.add('Davranış: ${_behaviorLabels[behavior]}');
+    }
+
+    if (academic != null && _academicLabels.containsKey(academic)) {
+      parts.add('Akademik durum: ${_academicLabels[academic]}');
+    }
+
+    if (notesController.text.trim().isNotEmpty) {
+      parts.add('Not: ${notesController.text.trim()}');
+    }
+
+    return parts.join(' • ');
+  }
+
+  String _buildRiskLevel() {
+    switch (behavior) {
+      case 'aggression':
+      case 'anxiety':
+        return 'high';
+      case 'withdrawal':
+      case 'mood':
+        return 'medium';
+      default:
+        return 'low';
+    }
+  }
+
+  Future<void> _saveObservation() async {
+    if (student == null || behavior == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Lütfen öğrenci ve davranış seçin')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      final firestore = FirebaseFirestore.instance;
+
+      final studentDoc = await firestore
+          .collection('students')
+          .doc(student)
+          .get();
+
+      if (!studentDoc.exists) {
+        throw Exception('Öğrenci bulunamadı');
+      }
+
+      final studentData = studentDoc.data()!;
+      final parentId = studentData['parent_id'] ?? '';
+
+      await firestore.collection('observations').add({
+        'student_id': student,
+        'parent_id': parentId,
+        'teacher_id': 'teacher1',
+        'title': _buildTitle(),
+        'message': _buildMessage(),
+        'note': notesController.text.trim(),
+        'behavior': behavior,
+        'academic': academic,
+        'risk_level': _buildRiskLevel(),
+        'source': 'guidance',
+        'created_at': FieldValue.serverTimestamp(),
+      });
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Observation saved')));
+
+      setState(() {
+        student = null;
+        behavior = null;
+        academic = null;
+      });
+      notesController.clear();
+
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Kayıt sırasında hata oluştu: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    notesController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     const backgroundDark = Color(0xFF101922);
@@ -23,7 +156,6 @@ class _ObservationScreenState extends State<ObservationScreen> {
 
     return Scaffold(
       backgroundColor: backgroundDark,
-
       body: Container(
         decoration: const BoxDecoration(
           gradient: RadialGradient(
@@ -32,11 +164,9 @@ class _ObservationScreenState extends State<ObservationScreen> {
             center: Alignment.topRight,
           ),
         ),
-
         child: SafeArea(
           child: Column(
             children: [
-              /// HEADER
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
@@ -51,11 +181,10 @@ class _ObservationScreenState extends State<ObservationScreen> {
                       icon: const Icon(Icons.arrow_back, color: Colors.white70),
                       onPressed: () => Navigator.pop(context),
                     ),
-
                     const Expanded(
                       child: Center(
                         child: Text(
-                          "Yeni Gözlem",
+                          'Yeni Gözlem',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -64,7 +193,6 @@ class _ObservationScreenState extends State<ObservationScreen> {
                         ),
                       ),
                     ),
-
                     IconButton(
                       icon: const Icon(Icons.more_vert, color: Colors.white70),
                       onPressed: () {},
@@ -72,111 +200,175 @@ class _ObservationScreenState extends State<ObservationScreen> {
                   ],
                 ),
               ),
-
-              /// BODY
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.all(16),
-
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      /// ÖĞRENCİ SEÇİMİ
-                      _sectionTitle(Icons.person_search, "Öğrenci Seçimi"),
-
+                      _sectionTitle(Icons.person_search, 'Öğrenci Seçimi'),
                       const SizedBox(height: 8),
 
-                      _dropdown(
-                        value: student,
-                        hint: "Öğrenci Seçiniz",
-                        items: const [
-                          DropdownMenuItem(
-                            value: "sarah",
-                            child: Text("Sarah Jenkins"),
-                          ),
-                          DropdownMenuItem(
-                            value: "john",
-                            child: Text("John Doe"),
-                          ),
-                        ],
-                        onChanged: (v) => setState(() => student = v),
+                      StreamBuilder<QuerySnapshot>(
+                        stream: FirebaseFirestore.instance
+                            .collection('students')
+                            .snapshots(),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(12),
+                                child: CircularProgressIndicator(),
+                              ),
+                            );
+                          }
+
+                          if (!snapshot.hasData ||
+                              snapshot.data!.docs.isEmpty) {
+                            return _dropdown(
+                              value: student,
+                              hint: 'Öğrenci bulunamadı',
+                              items: const [],
+                              onChanged: (_) {},
+                            );
+                          }
+
+                          final studentDocs = snapshot.data!.docs;
+
+                          return DropdownButtonFormField<String>(
+                            value: student,
+                            dropdownColor: const Color(0xFF1C2127),
+                            icon: const Icon(
+                              Icons.expand_more,
+                              color: Colors.white54,
+                            ),
+                            style: const TextStyle(color: Colors.white),
+                            decoration: InputDecoration(
+                              hintText: 'Öğrenci Seçiniz',
+                              hintStyle: const TextStyle(color: Colors.white38),
+                              filled: true,
+                              fillColor: const Color(0xFF101922),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: Colors.white10,
+                                ),
+                              ),
+                            ),
+                            items: studentDocs.map((doc) {
+                              final data = doc.data() as Map<String, dynamic>;
+                              final name = data['name'] ?? '';
+                              final schoolNo = data['school_no'] ?? '';
+
+                              return DropdownMenuItem<String>(
+                                value: doc.id,
+                                child: Text('$name ($schoolNo)'),
+                              );
+                            }).toList(),
+                            onChanged: (v) => setState(() => student = v),
+                          );
+                        },
                       ),
 
                       const SizedBox(height: 14),
 
-                      /// ÖĞRENCİ KARTI
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color.fromRGBO(28, 33, 39, 0.6),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.white10),
-                        ),
+                      if (student != null)
+                        FutureBuilder<DocumentSnapshot>(
+                          future: FirebaseFirestore.instance
+                              .collection('students')
+                              .doc(student)
+                              .get(),
+                          builder: (context, snapshot) {
+                            if (!snapshot.hasData || !snapshot.data!.exists) {
+                              return const SizedBox.shrink();
+                            }
 
-                        child: Row(
-                          children: [
-                            const CircleAvatar(
-                              radius: 28,
-                              backgroundImage: NetworkImage(
-                                "https://lh3.googleusercontent.com/aida-public/AB6AXuAfD2MXwwckz_dC5nCAOFL1yO_sUMmWLJ9NZlfkG0xNMSJjv71x_xTR_aguvSyY5nPJBF5V6XFQnrypl3UJGucabyonrqmfQgeB511V-dITjQIqUIjt7ob_Q3s6s0zAk40mWjYYXxvyd7KSgpu1DszdBLp5qVl4wqlC-2JHkUzzaaTt2R4bbDo3VMEgoHKCtWyMiYZ8CXd-9Olw_Axzy1oEMuir-K_l0U7Gt8IYUaSIAncM_H-tmWedIgic9iU-Ow3IqWFtnV9wLKPf",
+                            final data =
+                                snapshot.data!.data() as Map<String, dynamic>;
+                            final name = data['name'] ?? '';
+                            final studentClass = data['class'] ?? '-';
+                            final schoolNo = data['school_no'] ?? '-';
+
+                            return Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: const Color.fromRGBO(28, 33, 39, 0.6),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.white10),
                               ),
-                            ),
-
-                            const SizedBox(width: 14),
-
-                            const Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                              child: Row(
                                 children: [
-                                  Text(
-                                    "Sarah Jenkins",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
+                                  CircleAvatar(
+                                    radius: 28,
+                                    backgroundColor: primary.withOpacity(0.18),
+                                    child: Text(
+                                      name.isNotEmpty
+                                          ? name[0].toUpperCase()
+                                          : '?',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
-
-                                  SizedBox(height: 4),
-
-                                  Text(
-                                    "10-B Sınıfı • ID: #ST-2041",
-                                    style: TextStyle(color: Colors.white54),
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          name,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          '$studentClass Sınıfı • No: $schoolNo',
+                                          style: const TextStyle(
+                                            color: Colors.white54,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const Icon(
+                                    Icons.check_circle,
+                                    color: primary,
                                   ),
                                 ],
                               ),
-                            ),
-
-                            const Icon(Icons.check_circle, color: primary),
-                          ],
+                            );
+                          },
                         ),
-                      ),
 
                       const SizedBox(height: 24),
 
-                      /// DAVRANIŞ
-                      _sectionTitle(Icons.psychology, "Davranış Göstergeleri"),
-
+                      _sectionTitle(Icons.psychology, 'Davranış Göstergeleri'),
                       const SizedBox(height: 8),
 
                       _dropdown(
                         value: behavior,
-                        hint: "Gözlem seçiniz...",
+                        hint: 'Gözlem seçiniz...',
                         items: const [
                           DropdownMenuItem(
-                            value: "mood",
-                            child: Text("Ruh hali değişimi"),
+                            value: 'mood',
+                            child: Text('Ruh hali değişimi'),
                           ),
                           DropdownMenuItem(
-                            value: "withdrawal",
-                            child: Text("İçe kapanma"),
+                            value: 'withdrawal',
+                            child: Text('İçe kapanma'),
                           ),
                           DropdownMenuItem(
-                            value: "aggression",
-                            child: Text("Agresif davranış"),
+                            value: 'aggression',
+                            child: Text('Agresif davranış'),
                           ),
                           DropdownMenuItem(
-                            value: "anxiety",
-                            child: Text("Kaygı belirtileri"),
+                            value: 'anxiety',
+                            child: Text('Kaygı belirtileri'),
                           ),
                         ],
                         onChanged: (v) => setState(() => behavior = v),
@@ -184,30 +376,28 @@ class _ObservationScreenState extends State<ObservationScreen> {
 
                       const SizedBox(height: 24),
 
-                      /// AKADEMİK
-                      _sectionTitle(Icons.school, "Akademik Göstergeler"),
-
+                      _sectionTitle(Icons.school, 'Akademik Göstergeler'),
                       const SizedBox(height: 8),
 
                       _dropdown(
                         value: academic,
-                        hint: "Durum seçiniz...",
+                        hint: 'Durum seçiniz...',
                         items: const [
                           DropdownMenuItem(
-                            value: "declining",
-                            child: Text("Notlarda düşüş"),
+                            value: 'declining',
+                            child: Text('Notlarda düşüş'),
                           ),
                           DropdownMenuItem(
-                            value: "missing",
-                            child: Text("Eksik ödevler"),
+                            value: 'missing',
+                            child: Text('Eksik ödevler'),
                           ),
                           DropdownMenuItem(
-                            value: "attendance",
-                            child: Text("Devamsızlık"),
+                            value: 'attendance',
+                            child: Text('Devamsızlık'),
                           ),
                           DropdownMenuItem(
-                            value: "improvement",
-                            child: Text("Gelişim"),
+                            value: 'improvement',
+                            child: Text('Gelişim'),
                           ),
                         ],
                         onChanged: (v) => setState(() => academic = v),
@@ -215,9 +405,7 @@ class _ObservationScreenState extends State<ObservationScreen> {
 
                       const SizedBox(height: 24),
 
-                      /// NOTLAR
-                      _sectionTitle(Icons.description, "Ek Rehberlik Notları"),
-
+                      _sectionTitle(Icons.description, 'Ek Rehberlik Notları'),
                       const SizedBox(height: 8),
 
                       TextField(
@@ -226,7 +414,7 @@ class _ObservationScreenState extends State<ObservationScreen> {
                         style: const TextStyle(color: Colors.white),
                         decoration: InputDecoration(
                           hintText:
-                              "Gözlemlenen olay veya detayları yazınız...",
+                              'Gözlemlenen olay veya detayları yazınız...',
                           hintStyle: const TextStyle(color: Colors.white38),
                           filled: true,
                           fillColor: const Color(0xFF101922),
@@ -239,7 +427,6 @@ class _ObservationScreenState extends State<ObservationScreen> {
 
                       const SizedBox(height: 24),
 
-                      /// BUTONLAR
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: success,
@@ -248,36 +435,17 @@ class _ObservationScreenState extends State<ObservationScreen> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        onPressed: () async {
-                          if (student == null || behavior == null) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  "Lütfen öğrenci ve davranış seçin",
+                        onPressed: _isSaving ? null : _saveObservation,
+                        child: _isSaving
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2.2,
                                 ),
-                              ),
-                            );
-                            return;
-                          }
-
-                          await FirebaseFirestore.instance
-                              .collection('OBSERVATIONS')
-                              .add({
-                                'studentId': student,
-                                'teacherId': 'teacher_test',
-                                'behavior': behavior,
-                                'academic': academic,
-                                'note': notesController.text,
-                                'createdAt': Timestamp.now(),
-                              });
-
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Observation saved")),
-                          );
-
-                          Navigator.pop(context);
-                        },
-                        child: const Text("Save Observation"),
+                              )
+                            : const Text('Save Observation'),
                       ),
 
                       const SizedBox(height: 10),
@@ -287,7 +455,7 @@ class _ObservationScreenState extends State<ObservationScreen> {
                           minimumSize: const Size(double.infinity, 54),
                         ),
                         icon: const Icon(Icons.close),
-                        label: const Text("İptal"),
+                        label: const Text('İptal'),
                         onPressed: () => Navigator.pop(context),
                       ),
                     ],

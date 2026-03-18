@@ -2,7 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../teacher/presentation/teacher_dashboard.dart';
 import '../../student/student_routes.dart';
-import '../../parent/parent_routes.dart'; // ✅ EKLENDİ
+import '../../parent/parent_routes.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 enum UserRole { student, parent, counselor }
@@ -20,25 +20,21 @@ class _LoginScreenState extends State<LoginScreen> {
   final identifierController = TextEditingController();
   final passwordController = TextEditingController();
 
+  bool _obscurePassword = true;
+
   Future<void> signIn(String userId, String password, String role) async {
     final firestore = FirebaseFirestore.instance;
 
     try {
       if (role == "student") {
-        final studentDoc = await firestore
+        final result = await firestore
             .collection('students')
-            .doc(userId)
+            .where('school_no', isEqualTo: userId.trim())
+            .where('password', isEqualTo: password.trim())
             .get();
 
-        if (!studentDoc.exists) {
-          print("Student not found");
-          return;
-        }
-
-        final data = studentDoc.data();
-
-        if (data?['password'] != password) {
-          print("Wrong password");
+        if (result.docs.isEmpty) {
+          print("Student not found or wrong password");
           return;
         }
 
@@ -46,34 +42,67 @@ class _LoginScreenState extends State<LoginScreen> {
         return;
       }
 
-      final userDoc = await firestore.collection('USERS').doc(userId).get();
+      final result = await firestore
+          .collection('users')
+          .where('email', isEqualTo: userId.trim())
+          .get();
 
-      if (!userDoc.exists) {
+      if (result.docs.isEmpty) {
         print("User not found");
         return;
       }
 
-      final data = userDoc.data();
+      final userDoc = result.docs.first;
+      final userData = userDoc.data();
 
-      if (data?['password'] != password) {
+      if (userData['password'].toString().trim() != password.trim()) {
         print("Wrong password");
         return;
       }
 
-      if (data?['role'].toString().toLowerCase() != role.toLowerCase()) {
+      if (userData['role'].toString().toLowerCase().trim() !=
+          role.toLowerCase().trim()) {
         print("Wrong role");
         return;
       }
 
       if (role == 'parent') {
-        Navigator.pushReplacementNamed(context, ParentRoutes.dashboard);
+        final studentId = userData['student_id'];
+
+        final studentDoc = await firestore
+            .collection('students')
+            .doc(studentId)
+            .get();
+
+        if (!studentDoc.exists) {
+          print("Student not found for this parent");
+          return;
+        }
+
+        final studentData = studentDoc.data()!;
+
+        Navigator.pushReplacementNamed(
+          context,
+          ParentRoutes.dashboard,
+          arguments: {
+            'parentId': userDoc.id,
+            'parentName': userData['name'] ?? '',
+            'parentEmail': userData['email'] ?? '',
+            'studentId': studentId,
+            'studentName': studentData['name'] ?? '',
+            'studentClass': studentData['class'] ?? '',
+            'schoolNo': studentData['school_no'] ?? '',
+          },
+        );
+        return;
       }
 
       if (role == 'counselor') {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => TeacherDashboard()),
+          MaterialPageRoute(builder: (_) => const TeacherDashboard()),
         );
+        return;
       }
     } catch (e) {
       print("Login error: $e");
@@ -115,10 +144,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    const inputTextColor = Colors.black;
+    const hintColor = Colors.black54;
+    const iconColor = Colors.black87;
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
-          gradient: const LinearGradient(
+          gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [Color(0xFF042F2E), Color(0xFF064E3B), Color(0xFF1E40AF)],
@@ -130,7 +163,6 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                /// 🔵 LOGO + TITLE (YUKARIDA)
                 Column(
                   children: const [
                     Icon(
@@ -150,10 +182,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 40),
-
-                /// 🔵 BLUR LOGIN CARD
                 ClipRRect(
                   borderRadius: BorderRadius.circular(20),
                   child: BackdropFilter(
@@ -173,12 +202,11 @@ class _LoginScreenState extends State<LoginScreen> {
                             style: const TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.bold,
+                              color: Colors.black,
                             ),
                           ),
-
                           const SizedBox(height: 24),
 
-                          /// ROLE SELECTOR
                           Container(
                             decoration: BoxDecoration(
                               color: Colors.grey.shade200,
@@ -225,39 +253,95 @@ class _LoginScreenState extends State<LoginScreen> {
 
                           const SizedBox(height: 24),
 
-                          /// IDENTIFIER FIELD
                           TextField(
                             controller: identifierController,
                             keyboardType: selectedRole == UserRole.student
                                 ? TextInputType.number
                                 : TextInputType.emailAddress,
+                            style: const TextStyle(
+                              color: inputTextColor,
+                              fontWeight: FontWeight.w500,
+                            ),
                             decoration: InputDecoration(
-                              prefixIcon: Icon(getIdentifierIcon()),
+                              prefixIcon: Icon(
+                                getIdentifierIcon(),
+                                color: iconColor,
+                              ),
                               hintText: getIdentifierHint(),
+                              hintStyle: const TextStyle(color: hintColor),
+                              filled: true,
+                              fillColor: Colors.white,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: Colors.black12,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFF196EE6),
+                                  width: 1.5,
+                                ),
                               ),
                             ),
                           ),
 
                           const SizedBox(height: 16),
 
-                          /// PASSWORD FIELD
                           TextField(
                             controller: passwordController,
-                            obscureText: true,
+                            obscureText: _obscurePassword,
+                            style: const TextStyle(
+                              color: inputTextColor,
+                              fontWeight: FontWeight.w500,
+                            ),
                             decoration: InputDecoration(
-                              prefixIcon: const Icon(Icons.lock_outline),
+                              prefixIcon: const Icon(
+                                Icons.lock_outline,
+                                color: iconColor,
+                              ),
                               hintText: "Password",
+                              hintStyle: const TextStyle(color: hintColor),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility_off_outlined
+                                      : Icons.visibility_outlined,
+                                  color: iconColor,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _obscurePassword = !_obscurePassword;
+                                  });
+                                },
+                              ),
+                              filled: true,
+                              fillColor: Colors.white,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: Colors.black12,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFF196EE6),
+                                  width: 1.5,
+                                ),
                               ),
                             ),
                           ),
 
                           const SizedBox(height: 24),
 
-                          /// LOGIN BUTTON
                           SizedBox(
                             width: double.infinity,
                             child: ElevatedButton(
@@ -279,7 +363,10 @@ class _LoginScreenState extends State<LoginScreen> {
                               },
                               child: const Text(
                                 "Sign In",
-                                style: TextStyle(fontWeight: FontWeight.bold),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
                           ),

@@ -1,5 +1,8 @@
 import 'dart:ui';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:frontend/features/auth/presentation/login_screen.dart';
+import '../widgets/parent_bottom_nav.dart';
 
 class ParentProfileSettingsScreen extends StatefulWidget {
   const ParentProfileSettingsScreen({super.key});
@@ -15,19 +18,53 @@ class _ParentProfileSettingsScreenState
   bool emailAlerts = false;
   bool faceId = true;
 
+  Future<void> _handleLogout() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+
+      if (!mounted) return;
+
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Logout failed: $e')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     const primary = Color(0xFF1193D4);
     const bgDark = Color(0xFF101C22);
 
+    final args =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+
+    final String parentName = args?['parentName'] ?? 'Parent';
+    final String studentId = args?['studentId'] ?? '';
+    final String studentName = args?['studentName'] ?? 'Student';
+    final String studentClass = args?['studentClass'] ?? '-';
+    final String schoolNo = args?['schoolNo'] ?? '-';
+
+    final Map<String, dynamic> parentArgs = {
+      'parentName': parentName,
+      'studentId': studentId,
+      'studentName': studentName,
+      'studentClass': studentClass,
+      'schoolNo': schoolNo,
+    };
+
     return Scaffold(
       backgroundColor: bgDark,
       body: Stack(
         children: [
-          // Page background (dark)
           Container(color: bgDark),
-
-          // Gradient header area
           Container(
             height: 340,
             decoration: const BoxDecoration(
@@ -49,11 +86,9 @@ class _ParentProfileSettingsScreenState
               ],
             ),
           ),
-
           SafeArea(
             child: Stack(
               children: [
-                // Scroll content
                 Positioned.fill(
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
@@ -61,7 +96,6 @@ class _ParentProfileSettingsScreenState
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Header row (back - title - edit)
                         Padding(
                           padding: const EdgeInsets.fromLTRB(16, 12, 16, 10),
                           child: Row(
@@ -91,7 +125,6 @@ class _ParentProfileSettingsScreenState
 
                         const SizedBox(height: 18),
 
-                        // Profile card (overlapping the header)
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Transform.translate(
@@ -101,7 +134,6 @@ class _ParentProfileSettingsScreenState
                               padding: const EdgeInsets.all(18),
                               child: Column(
                                 children: [
-                                  // avatar with verified
                                   Stack(
                                     children: [
                                       Container(
@@ -154,7 +186,7 @@ class _ParentProfileSettingsScreenState
                                   ),
                                   const SizedBox(height: 12),
                                   Text(
-                                    'Sarah Jenkins',
+                                    parentName,
                                     style: TextStyle(
                                       color:
                                           Theme.of(context).brightness ==
@@ -167,7 +199,7 @@ class _ParentProfileSettingsScreenState
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
-                                    'sarah.j@email.com',
+                                    args?['email'] ?? 'parent@email.com',
                                     style: TextStyle(
                                       color:
                                           Theme.of(context).brightness ==
@@ -188,18 +220,18 @@ class _ParentProfileSettingsScreenState
                                       color: primary.withOpacity(0.10),
                                       borderRadius: BorderRadius.circular(999),
                                     ),
-                                    child: const Row(
+                                    child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Icon(
+                                        const Icon(
                                           Icons.school,
                                           color: primary,
                                           size: 18,
                                         ),
-                                        SizedBox(width: 8),
+                                        const SizedBox(width: 8),
                                         Text(
-                                          'LINKED STUDENT: ST-1024',
-                                          style: TextStyle(
+                                          'LINKED STUDENT: ${schoolNo == '-' ? studentId : schoolNo}',
+                                          style: const TextStyle(
                                             color: primary,
                                             fontSize: 11,
                                             fontWeight: FontWeight.w800,
@@ -217,13 +249,12 @@ class _ParentProfileSettingsScreenState
 
                         const SizedBox(height: 96),
 
-                        // Settings sections
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              _SectionTitle('Preferences'),
+                              const _SectionTitle('Preferences'),
                               _GlassGroup(
                                 children: [
                                   _NavRow(
@@ -251,9 +282,7 @@ class _ParentProfileSettingsScreenState
                                         ),
                                       ],
                                     ),
-                                    onTap: () {
-                                      // TODO: language picker
-                                    },
+                                    onTap: () {},
                                   ),
                                   _SwitchRow(
                                     iconBg: const Color(
@@ -282,7 +311,7 @@ class _ParentProfileSettingsScreenState
 
                               const SizedBox(height: 18),
 
-                              _SectionTitle('Security'),
+                              const _SectionTitle('Security'),
                               _GlassGroup(
                                 children: [
                                   _NavRow(
@@ -296,9 +325,7 @@ class _ParentProfileSettingsScreenState
                                       Icons.chevron_right_rounded,
                                       color: Color(0xFF9CA3AF),
                                     ),
-                                    onTap: () {
-                                      // TODO: change password screen
-                                    },
+                                    onTap: () {},
                                   ),
                                   _SwitchRow(
                                     iconBg: const Color(
@@ -316,7 +343,7 @@ class _ParentProfileSettingsScreenState
 
                               const SizedBox(height: 18),
 
-                              _SectionTitle('Account'),
+                              const _SectionTitle('Account'),
                               _GlassGroup(
                                 children: [
                                   _NavRow(
@@ -331,16 +358,9 @@ class _ParentProfileSettingsScreenState
                                       color: Color(0xFF9CA3AF),
                                       size: 20,
                                     ),
-                                    onTap: () {
-                                      // TODO: open privacy policy
-                                    },
+                                    onTap: () {},
                                   ),
-                                  _LogoutRow(
-                                    onTap: () {
-                                      // TODO: logout -> back to Login
-                                      // Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false);
-                                    },
-                                  ),
+                                  _LogoutRow(onTap: _handleLogout),
                                 ],
                               ),
 
@@ -366,12 +386,11 @@ class _ParentProfileSettingsScreenState
                   ),
                 ),
 
-                // Bottom navigation (HTML’deki 5 ikonlu)
-                const Positioned(
+                Positioned(
                   left: 0,
                   right: 0,
                   bottom: 0,
-                  child: _ProfileBottomNav(selectedIndex: 2),
+                  child: ParentBottomNav(selectedIndex: 3, args: parentArgs),
                 ),
               ],
             ),
@@ -640,130 +659,6 @@ class _LogoutRow extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ProfileBottomNav extends StatelessWidget {
-  const _ProfileBottomNav({required this.selectedIndex});
-  final int selectedIndex;
-
-  @override
-  Widget build(BuildContext context) {
-    const primary = Color(0xFF1193D4);
-
-    Widget item({
-      required int index,
-      required IconData icon,
-      required String label,
-      required VoidCallback onTap,
-      bool showDot = false,
-      bool activeBold = false,
-    }) {
-      final active = index == selectedIndex;
-      final color = active ? primary : const Color(0xFF9CA3AF);
-
-      return Expanded(
-        child: InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Icon(icon, color: color, size: 28),
-                    if (showDot)
-                      Positioned(
-                        top: -2,
-                        right: -2,
-                        child: Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: active ? primary : primary,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 1),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 10,
-                    fontWeight: active
-                        ? (activeBold ? FontWeight.w900 : FontWeight.w800)
-                        : FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    return ClipRRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(18, 10, 18, 22),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.70),
-            border: Border(
-              top: BorderSide(color: Colors.white.withOpacity(0.20), width: 1),
-            ),
-          ),
-          child: Row(
-            children: [
-              item(
-                index: 0,
-                icon: Icons.home_rounded,
-                label: 'Home',
-                onTap: () => Navigator.pushNamed(context, '/parent/dashboard'),
-              ),
-              item(
-                index: 1,
-                icon: Icons.analytics,
-                label: 'Reports',
-                onTap: () {
-                  // TODO: /parent/reports
-                },
-              ),
-              item(
-                index: 2,
-                icon: Icons.person,
-                label: 'Profile',
-                showDot: true,
-                activeBold: true,
-                onTap: () {}, // zaten burası
-              ),
-              item(
-                index: 3,
-                icon: Icons.calendar_today,
-                label: 'Events',
-                onTap: () {
-                  // TODO: /parent/events
-                },
-              ),
-              item(
-                index: 4,
-                icon: Icons.contact_support,
-                label: 'Support',
-                onTap: () {
-                  // TODO: /parent/support
-                },
-              ),
-            ],
-          ),
         ),
       ),
     );
