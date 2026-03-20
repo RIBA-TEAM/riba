@@ -230,12 +230,13 @@ class _ParentMessagesScreenState extends State<ParentMessagesScreen> {
             ),
           ),
           SafeArea(
+             bottom: false,
             child: Stack(
               children: [
                 Positioned.fill(
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.only(bottom: 140),
+                    padding: const EdgeInsets.only(bottom: 80),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -443,7 +444,7 @@ class _ParentMessagesScreenState extends State<ParentMessagesScreen> {
                 ),
                 Positioned(
                   right: 18,
-                  bottom: 110,
+                  bottom: 100,
                   child: GestureDetector(
                     onTap: () {
                       if (parentId.isEmpty || studentId.isEmpty) {

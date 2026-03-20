@@ -47,7 +47,8 @@ class ParentDashboardScreen extends StatelessWidget {
 
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.only(bottom: 96),
+             
+                padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
                 child: Column(
@@ -235,24 +236,11 @@ class ParentDashboardScreen extends StatelessWidget {
           ),
 
           Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: ParentBottomNav(selectedIndex: 0, args: parentArgs),
-          ),
-
-          Positioned(
-            left: MediaQuery.of(context).size.width / 2 - 64,
-            bottom: 6,
-            child: Container(
-              width: 128,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.30),
-                borderRadius: BorderRadius.circular(999),
-              ),
-            ),
-          ),
+  left: 0,
+  right: 0,
+  bottom: 0,
+  child: ParentBottomNav(selectedIndex: 0, args: parentArgs),
+),
         ],
       ),
     );
