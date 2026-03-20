@@ -13,7 +13,6 @@ class ParentSystemInfoScreen extends StatelessWidget {
       backgroundColor: const Color(0xFF101C22),
       body: Stack(
         children: [
-          // iOS-style vertical gradient background
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
@@ -23,19 +22,16 @@ class ParentSystemInfoScreen extends StatelessWidget {
               ),
             ),
           ),
-
           SafeArea(
             child: Stack(
               children: [
-                // Scroll content
                 Positioned.fill(
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.only(bottom: 110),
+                    padding: const EdgeInsets.only(bottom: 24),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Header / Top Bar
                         Padding(
                           padding: const EdgeInsets.fromLTRB(24, 18, 24, 12),
                           child: Row(
@@ -56,14 +52,11 @@ class ParentSystemInfoScreen extends StatelessWidget {
                                   ),
                                 ),
                               ),
-                              const SizedBox(
-                                width: 52,
-                              ), // sağ boşluk (HTML'deki pr-10)
+                              const SizedBox(width: 52),
                             ],
                           ),
                         ),
 
-                        // Hero Section
                         Padding(
                           padding: const EdgeInsets.fromLTRB(24, 10, 24, 0),
                           child: Column(
@@ -101,7 +94,6 @@ class ParentSystemInfoScreen extends StatelessWidget {
 
                         const SizedBox(height: 18),
 
-                        // Information Cards
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 24),
                           child: Column(
@@ -139,7 +131,6 @@ class ParentSystemInfoScreen extends StatelessWidget {
 
                         const SizedBox(height: 18),
 
-                        // Visual image section
                         Padding(
                           padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
                           child: _ImageBanner(
@@ -151,7 +142,6 @@ class ParentSystemInfoScreen extends StatelessWidget {
 
                         const SizedBox(height: 22),
 
-                        // Footer / Contact Section
                         Padding(
                           padding: const EdgeInsets.fromLTRB(24, 0, 24, 18),
                           child: Column(
@@ -160,7 +150,6 @@ class ParentSystemInfoScreen extends StatelessWidget {
                                 width: double.infinity,
                                 child: ElevatedButton(
                                   onPressed: () {
-                                    // HTML: Got it, Thank you
                                     Navigator.pop(context);
                                   },
                                   style: ElevatedButton.styleFrom(
@@ -200,14 +189,6 @@ class ParentSystemInfoScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-
-                // Bottom Navigation Bar (4 icons like HTML)
-                const Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: _InfoBottomNav(selectedIndex: 0),
-                ),
               ],
             ),
           ),
@@ -216,8 +197,6 @@ class ParentSystemInfoScreen extends StatelessWidget {
     );
   }
 }
-
-/* ----------------------------- UI PIECES ----------------------------- */
 
 class _GlassCard extends StatelessWidget {
   const _GlassCard({required this.child, this.borderRadius = 16, this.padding});
@@ -409,88 +388,6 @@ class _ImageBanner extends StatelessWidget {
                   ),
                 ),
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _InfoBottomNav extends StatelessWidget {
-  const _InfoBottomNav({required this.selectedIndex});
-  final int selectedIndex;
-
-  @override
-  Widget build(BuildContext context) {
-    const primary = Color(0xFF1193D4);
-
-    Widget item({
-      required int index,
-      required IconData icon,
-      required String label,
-      required VoidCallback onTap,
-    }) {
-      final active = index == selectedIndex;
-      final color = active ? primary : const Color(0xFF9CA3AF);
-
-      return Expanded(
-        child: InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, color: color, size: 24),
-                const SizedBox(height: 4),
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    return _GlassCard(
-      borderRadius: 0,
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-      child: SizedBox(
-        height: 70,
-        child: Row(
-          children: [
-            item(
-              index: 0,
-              icon: Icons.home_rounded,
-              label: 'Home',
-              onTap: () => Navigator.pushNamed(context, '/parent/dashboard'),
-            ),
-            item(
-              index: 1,
-              icon: Icons.description,
-              label: 'Reports',
-              onTap: () {
-                // TODO: reports
-              },
-            ),
-            item(
-              index: 2,
-              icon: Icons.chat_bubble,
-              label: 'Chat',
-              onTap: () => Navigator.pushNamed(context, '/parent/messages'),
-            ),
-            item(
-              index: 3,
-              icon: Icons.settings,
-              label: 'Settings',
-              onTap: () => Navigator.pushNamed(context, '/parent/profile'),
             ),
           ],
         ),

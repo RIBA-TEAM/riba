@@ -3,11 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend/features/parent/parent_routes.dart' show ParentRoutes;
 
 class ParentBottomNav extends StatelessWidget {
-  const ParentBottomNav({
-    super.key,
-    required this.selectedIndex,
-    this.args,
-  });
+  const ParentBottomNav({super.key, required this.selectedIndex, this.args});
 
   final int selectedIndex;
   final Map<String, dynamic>? args;
@@ -25,8 +21,8 @@ class ParentBottomNav extends StatelessWidget {
       final bool active = index == selectedIndex;
       final Color inactiveColor =
           Theme.of(context).brightness == Brightness.dark
-              ? const Color(0xFF64748B)
-              : const Color(0xFF94A3B8);
+          ? const Color(0xFF7C8EA3)
+          : const Color(0xFF94A3B8);
 
       return Expanded(
         child: InkWell(
@@ -36,19 +32,14 @@ class ParentBottomNav extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  icon,
-                  color: active ? primary : inactiveColor,
-                  size: 26,
-                ),
+                Icon(icon, color: active ? primary : inactiveColor),
                 const SizedBox(height: 4),
                 Text(
                   label,
                   style: TextStyle(
                     fontSize: 10,
-                    fontWeight: active ? FontWeight.w800 : FontWeight.w600,
+                    fontWeight: FontWeight.w600,
                     color: active ? primary : inactiveColor,
-                    letterSpacing: 0.5,
                   ),
                 ),
               ],
@@ -70,7 +61,7 @@ class ParentBottomNav extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 18),
           decoration: BoxDecoration(
             color: Theme.of(context).brightness == Brightness.dark
-                ? const Color(0xFF101C22).withOpacity(0.60)
+                ? const Color.fromARGB(255, 2, 14, 19)
                 : Colors.white.withOpacity(0.70),
             border: Border(
               top: BorderSide(
@@ -100,7 +91,7 @@ class ParentBottomNav extends StatelessWidget {
               item(
                 index: 1,
                 icon: Icons.chat_bubble_outline_rounded,
-                label: 'Messages',
+                label: 'Chat',
                 onTap: () {
                   if (selectedIndex != 1) {
                     Navigator.pushReplacementNamed(
@@ -127,8 +118,8 @@ class ParentBottomNav extends StatelessWidget {
               ),
               item(
                 index: 3,
-                icon: Icons.person_outline_rounded,
-                label: 'Profile',
+                icon: Icons.settings_outlined,
+                label: 'Settings',
                 onTap: () {
                   if (selectedIndex != 3) {
                     Navigator.pushReplacementNamed(

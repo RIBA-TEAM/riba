@@ -1,18 +1,26 @@
-// TODO Implement this library.
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 import '../widgets/parent_bottom_nav.dart';
 
-class ParentCalendarScreen extends StatelessWidget {
+class ParentCalendarScreen extends StatefulWidget {
   const ParentCalendarScreen({super.key});
+
+  @override
+  State<ParentCalendarScreen> createState() => _ParentCalendarScreenState();
+}
+
+class _ParentCalendarScreenState extends State<ParentCalendarScreen> {
+  DateTime _focusedDay = DateTime.now();
+  DateTime? _selectedDay = DateTime.now();
 
   Stream<List<Map<String, dynamic>>> _getEvents({
     required String parentId,
     required String studentId,
   }) {
     return FirebaseFirestore.instance
-        .collection('calendar_events')
+        .collection('calender_events')
         .where('student_id', isEqualTo: studentId)
         .where('parent_id', isEqualTo: parentId)
         .snapshots()
@@ -63,6 +71,36 @@ class ParentCalendarScreen extends StatelessWidget {
     }
   }
 
+  static DateTime _dateOnly(DateTime date) {
+    return DateTime(date.year, date.month, date.day);
+  }
+
+  List<Map<String, dynamic>> _eventsForSelectedDay(
+    List<Map<String, dynamic>> allEvents,
+  ) {
+    if (_selectedDay == null) return [];
+    final selected = _dateOnly(_selectedDay!);
+
+    return allEvents.where((event) {
+      final eventDate = _dateOnly(_parseDate(event['date']));
+      return eventDate == selected;
+    }).toList();
+  }
+
+  Map<DateTime, List<Map<String, dynamic>>> _groupEventsByDay(
+    List<Map<String, dynamic>> events,
+  ) {
+    final Map<DateTime, List<Map<String, dynamic>>> grouped = {};
+
+    for (final event in events) {
+      final day = _dateOnly(_parseDate(event['date']));
+      grouped.putIfAbsent(day, () => []);
+      grouped[day]!.add(event);
+    }
+
+    return grouped;
+  }
+
   @override
   Widget build(BuildContext context) {
     const primary = Color(0xFF1193D4);
@@ -79,6 +117,7 @@ class ParentCalendarScreen extends StatelessWidget {
     final String studentName = args?['studentName'] ?? 'Student';
     final String studentClass = args?['studentClass'] ?? '-';
     final String schoolNo = args?['schoolNo'] ?? '-';
+   
 
     final Map<String, dynamic> parentArgs = {
       'parentId': parentId,
@@ -103,12 +142,13 @@ class ParentCalendarScreen extends StatelessWidget {
             ),
           ),
           SafeArea(
+            bottom: false,
             child: Stack(
               children: [
                 Positioned.fill(
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
-                    padding: const EdgeInsets.only(bottom: 120),
+                    padding: const EdgeInsets.only(bottom: 96),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -182,60 +222,6 @@ class ParentCalendarScreen extends StatelessWidget {
                           ),
                         ),
 
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.12),
-                              borderRadius: BorderRadius.circular(18),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 46,
-                                  height: 46,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.12),
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                  child: const Icon(
-                                    Icons.event_available,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                const Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Upcoming Events',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                      SizedBox(height: 4),
-                                      Text(
-                                        'Meetings, school activities, and guidance appointments.',
-                                        style: TextStyle(
-                                          color: Color(0xCCFFFFFF),
-                                          fontSize: 13,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
-
                         if (studentId.isEmpty || parentId.isEmpty)
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -296,148 +282,358 @@ class ParentCalendarScreen extends StatelessWidget {
                               }
 
                               final events = snapshot.data ?? [];
-
-                              if (events.isEmpty) {
-                                return Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                  ),
-                                  child: Container(
-                                    padding: const EdgeInsets.all(20),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.12),
-                                      borderRadius: BorderRadius.circular(18),
-                                    ),
-                                    child: const Text(
-                                      'No calendar events found for this parent/student.',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              }
+                              final groupedEvents = _groupEventsByDay(events);
+                              final selectedDayEvents = _eventsForSelectedDay(
+                                events,
+                              );
 
                               return Padding(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 16,
                                 ),
                                 child: Column(
-                                  children: events.map((event) {
-                                    final title = (event['title'] ?? 'Event')
-                                        .toString();
-                                    final description =
-                                        (event['description'] ?? '').toString();
-                                    final location = (event['location'] ?? '-')
-                                        .toString();
-                                    final type =
-                                        (event['event_type'] ?? 'general')
-                                            .toString();
-                                    final date = _parseDate(event['date']);
-                                    final typeColor = _badgeColor(type);
-
-                                    return Container(
-                                      margin: const EdgeInsets.only(bottom: 12),
-                                      padding: const EdgeInsets.all(16),
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(14),
                                       decoration: BoxDecoration(
-                                        color: cardDark.withOpacity(0.92),
-                                        borderRadius: BorderRadius.circular(18),
+                                        color: Colors.white.withOpacity(0.12),
+                                        borderRadius: BorderRadius.circular(20),
                                         border: Border.all(
-                                          color: Colors.white.withOpacity(0.05),
+                                          color: Colors.white.withOpacity(0.08),
                                         ),
                                       ),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Expanded(
-                                                child: Text(
-                                                  title,
-                                                  style: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 17,
-                                                    fontWeight: FontWeight.w800,
+                                      child:
+                                          TableCalendar<Map<String, dynamic>>(
+                                            firstDay: DateTime.utc(2020, 1, 1),
+                                            lastDay: DateTime.utc(2035, 12, 31),
+                                            focusedDay: _focusedDay,
+                                            selectedDayPredicate: (day) =>
+                                                isSameDay(_selectedDay, day),
+                                            eventLoader: (day) =>
+                                                groupedEvents[_dateOnly(day)] ??
+                                                [],
+                                            calendarFormat:
+                                                CalendarFormat.month,
+                                            startingDayOfWeek:
+                                                StartingDayOfWeek.monday,
+                                            availableCalendarFormats: const {
+                                              CalendarFormat.month: 'Month',
+                                            },
+                                            headerStyle: const HeaderStyle(
+                                              titleCentered: true,
+                                              formatButtonVisible: false,
+                                              titleTextStyle: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.w800,
+                                              ),
+                                              leftChevronIcon: Icon(
+                                                Icons.chevron_left,
+                                                color: Colors.white,
+                                              ),
+                                              rightChevronIcon: Icon(
+                                                Icons.chevron_right,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                            daysOfWeekStyle:
+                                                const DaysOfWeekStyle(
+                                                  weekdayStyle: TextStyle(
+                                                    color: Color(0xCCFFFFFF),
+                                                    fontWeight: FontWeight.w600,
                                                   ),
+                                                  weekendStyle: TextStyle(
+                                                    color: Color(0xCCFFFFFF),
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                            calendarStyle: CalendarStyle(
+                                              defaultTextStyle: const TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                              weekendTextStyle: const TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                              outsideTextStyle: TextStyle(
+                                                color: Colors.white.withOpacity(
+                                                  0.35,
                                                 ),
                                               ),
-                                              Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                      horizontal: 10,
-                                                      vertical: 5,
-                                                    ),
-                                                decoration: BoxDecoration(
-                                                  color: typeColor.withOpacity(
-                                                    0.15,
-                                                  ),
-                                                  borderRadius:
-                                                      BorderRadius.circular(20),
+                                              todayDecoration: BoxDecoration(
+                                                color: Colors.white.withOpacity(
+                                                  0.16,
                                                 ),
-                                                child: Text(
-                                                  type,
-                                                  style: TextStyle(
-                                                    color: typeColor,
-                                                    fontSize: 11,
+                                                shape: BoxShape.circle,
+                                                border: Border.all(
+                                                  color: Colors.white70,
+                                                  width: 1.2,
+                                                ),
+                                              ),
+                                              selectedDecoration:
+                                                  const BoxDecoration(
+                                                    color: primary,
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                              markerDecoration:
+                                                  const BoxDecoration(
+                                                    color: Color(0xFF10E0A5),
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                              markersMaxCount: 3,
+                                              markerMargin:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 1.2,
+                                                  ),
+                                            ),
+                                            onDaySelected:
+                                                (selectedDay, focusedDay) {
+                                                  setState(() {
+                                                    _selectedDay = selectedDay;
+                                                    _focusedDay = focusedDay;
+                                                  });
+                                                },
+                                            onPageChanged: (focusedDay) {
+                                              _focusedDay = focusedDay;
+                                            },
+                                          ),
+                                    ),
+
+                                    const SizedBox(height: 18),
+
+                                    Container(
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.12),
+                                        borderRadius: BorderRadius.circular(18),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Container(
+                                            width: 46,
+                                            height: 46,
+                                            decoration: BoxDecoration(
+                                              color: Colors.white.withOpacity(
+                                                0.12,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(14),
+                                            ),
+                                            child: const Icon(
+                                              Icons.event_available,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  _selectedDay == null
+                                                      ? 'Selected Day'
+                                                      : 'Events on ${_selectedDay!.day}.${_selectedDay!.month}.${_selectedDay!.year}',
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 16,
                                                     fontWeight: FontWeight.w700,
                                                   ),
                                                 ),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 10),
-                                          Row(
-                                            children: [
-                                              const Icon(
-                                                Icons.schedule,
-                                                color: Color(0xFFB0BEC5),
-                                                size: 16,
-                                              ),
-                                              const SizedBox(width: 6),
-                                              Text(
-                                                _formatDate(date),
-                                                style: const TextStyle(
-                                                  color: Color(0xFFB0BEC5),
-                                                  fontSize: 13,
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  selectedDayEvents.isEmpty
+                                                      ? 'No events on this date.'
+                                                      : '${selectedDayEvents.length} event(s) found.',
+                                                  style: const TextStyle(
+                                                    color: Color(0xCCFFFFFF),
+                                                    fontSize: 13,
+                                                  ),
                                                 ),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Row(
-                                            children: [
-                                              const Icon(
-                                                Icons.location_on_outlined,
-                                                color: Color(0xFFB0BEC5),
-                                                size: 16,
-                                              ),
-                                              const SizedBox(width: 6),
-                                              Text(
-                                                location,
-                                                style: const TextStyle(
-                                                  color: Color(0xFFB0BEC5),
-                                                  fontSize: 13,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                          if (description.isNotEmpty) ...[
-                                            const SizedBox(height: 12),
-                                            Text(
-                                              description,
-                                              style: const TextStyle(
-                                                color: Colors.white70,
-                                                fontSize: 14,
-                                                height: 1.35,
-                                              ),
+                                              ],
                                             ),
-                                          ],
+                                          ),
                                         ],
                                       ),
-                                    );
-                                  }).toList(),
+                                    ),
+
+                                    const SizedBox(height: 16),
+
+                                    if (events.isEmpty)
+                                      Container(
+                                        padding: const EdgeInsets.all(20),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.12),
+                                          borderRadius: BorderRadius.circular(
+                                            18,
+                                          ),
+                                        ),
+                                        child: const Text(
+                                          'No calendar events found for this parent/student.',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      )
+                                    else if (selectedDayEvents.isEmpty)
+                                      Container(
+                                        padding: const EdgeInsets.all(20),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.12),
+                                          borderRadius: BorderRadius.circular(
+                                            18,
+                                          ),
+                                        ),
+                                        child: const Text(
+                                          'There are no events on the selected day.',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      )
+                                    else
+                                      Column(
+                                        children: selectedDayEvents.map((
+                                          event,
+                                        ) {
+                                          final title =
+                                              (event['title'] ?? 'Event')
+                                                  .toString();
+                                          final description =
+                                              (event['description'] ?? '')
+                                                  .toString();
+                                          final location =
+                                              (event['location'] ?? '-')
+                                                  .toString();
+                                          final type =
+                                              (event['event_type'] ?? 'general')
+                                                  .toString();
+                                          final date = _parseDate(
+                                            event['date'],
+                                          );
+                                          final typeColor = _badgeColor(type);
+
+                                          return Container(
+                                            margin: const EdgeInsets.only(
+                                              bottom: 12,
+                                            ),
+                                            padding: const EdgeInsets.all(16),
+                                            decoration: BoxDecoration(
+                                              color: cardDark.withOpacity(0.92),
+                                              borderRadius:
+                                                  BorderRadius.circular(18),
+                                              border: Border.all(
+                                                color: Colors.white.withOpacity(
+                                                  0.05,
+                                                ),
+                                              ),
+                                            ),
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    Expanded(
+                                                      child: Text(
+                                                        title,
+                                                        style: const TextStyle(
+                                                          color: Colors.white,
+                                                          fontSize: 17,
+                                                          fontWeight:
+                                                              FontWeight.w800,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Container(
+                                                      padding:
+                                                          const EdgeInsets.symmetric(
+                                                            horizontal: 10,
+                                                            vertical: 5,
+                                                          ),
+                                                      decoration: BoxDecoration(
+                                                        color: typeColor
+                                                            .withOpacity(0.15),
+                                                        borderRadius:
+                                                            BorderRadius.circular(
+                                                              20,
+                                                            ),
+                                                      ),
+                                                      child: Text(
+                                                        type,
+                                                        style: TextStyle(
+                                                          color: typeColor,
+                                                          fontSize: 11,
+                                                          fontWeight:
+                                                              FontWeight.w700,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 10),
+                                                Row(
+                                                  children: [
+                                                    const Icon(
+                                                      Icons.schedule,
+                                                      color: Color(0xFFB0BEC5),
+                                                      size: 16,
+                                                    ),
+                                                    const SizedBox(width: 6),
+                                                    Text(
+                                                      _formatDate(date),
+                                                      style: const TextStyle(
+                                                        color: Color(
+                                                          0xFFB0BEC5,
+                                                        ),
+                                                        fontSize: 13,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                const SizedBox(height: 8),
+                                                Row(
+                                                  children: [
+                                                    const Icon(
+                                                      Icons
+                                                          .location_on_outlined,
+                                                      color: Color(0xFFB0BEC5),
+                                                      size: 16,
+                                                    ),
+                                                    const SizedBox(width: 6),
+                                                    Text(
+                                                      location,
+                                                      style: const TextStyle(
+                                                        color: Color(
+                                                          0xFFB0BEC5,
+                                                        ),
+                                                        fontSize: 13,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                if (description.isNotEmpty) ...[
+                                                  const SizedBox(height: 12),
+                                                  Text(
+                                                    description,
+                                                    style: const TextStyle(
+                                                      color: Colors.white70,
+                                                      fontSize: 14,
+                                                      height: 1.35,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ],
+                                            ),
+                                          );
+                                        }).toList(),
+                                      ),
+                                  ],
                                 ),
                               );
                             },
@@ -446,7 +642,6 @@ class ParentCalendarScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-
                 Positioned(
                   left: 0,
                   right: 0,

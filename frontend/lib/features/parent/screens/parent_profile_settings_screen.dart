@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:frontend/features/auth/presentation/login_screen.dart';
 import '../widgets/parent_bottom_nav.dart';
+import 'parent_system_info_screen.dart';
 
 class ParentProfileSettingsScreen extends StatefulWidget {
   const ParentProfileSettingsScreen({super.key});
@@ -47,18 +48,22 @@ class _ParentProfileSettingsScreenState
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
 
     final String parentName = args?['parentName'] ?? 'Parent';
+    final String parentEmail = args?['parentEmail'] ?? 'parent@email.com';
     final String studentId = args?['studentId'] ?? '';
     final String studentName = args?['studentName'] ?? 'Student';
     final String studentClass = args?['studentClass'] ?? '-';
     final String schoolNo = args?['schoolNo'] ?? '-';
+    final String parentId = args?['parentId'] ?? '';
 
-    final Map<String, dynamic> parentArgs = {
-      'parentName': parentName,
-      'studentId': studentId,
-      'studentName': studentName,
-      'studentClass': studentClass,
-      'schoolNo': schoolNo,
-    };
+  final Map<String, dynamic> parentArgs = {
+  'parentId': parentId,
+  'parentName': parentName,
+  'parentEmail': parentEmail,
+  'studentId': studentId,
+  'studentName': studentName,
+  'studentClass': studentClass,
+  'schoolNo': schoolNo,
+};
 
     return Scaffold(
       backgroundColor: bgDark,
@@ -87,6 +92,7 @@ class _ParentProfileSettingsScreenState
             ),
           ),
           SafeArea(
+            bottom: false,
             child: Stack(
               children: [
                 Positioned.fill(
@@ -199,7 +205,7 @@ class _ParentProfileSettingsScreenState
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
-                                    args?['email'] ?? 'parent@email.com',
+                                    parentEmail,
                                     style: TextStyle(
                                       color:
                                           Theme.of(context).brightness ==
@@ -359,6 +365,27 @@ class _ParentProfileSettingsScreenState
                                       size: 20,
                                     ),
                                     onTap: () {},
+                                  ),
+                                  _NavRow(
+                                    iconBg: const Color(
+                                      0xFF1193D4,
+                                    ).withOpacity(0.10),
+                                    iconColor: const Color(0xFF1193D4),
+                                    icon: Icons.info_outline_rounded,
+                                    title: 'System Information',
+                                    trailing: const Icon(
+                                      Icons.chevron_right_rounded,
+                                      color: Color(0xFF9CA3AF),
+                                    ),
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) =>
+                                              const ParentSystemInfoScreen(),
+                                        ),
+                                      );
+                                    },
                                   ),
                                   _LogoutRow(onTap: _handleLogout),
                                 ],
