@@ -3,10 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:frontend/features/parent/parent_routes.dart' show ParentRoutes;
 
 class ParentBottomNav extends StatelessWidget {
-  const ParentBottomNav({super.key, required this.selectedIndex, this.args});
+  const ParentBottomNav({
+    super.key,
+    required this.selectedIndex,
+    required this.onItemSelected, // 🔥 EKLENDİ
+  });
 
   final int selectedIndex;
   final Map<String, dynamic>? args;
+
+  /// 🔥 EKLENDİ
+  final Function(int) onItemSelected;
 
   @override
   Widget build(BuildContext context) {
@@ -19,10 +26,6 @@ class ParentBottomNav extends StatelessWidget {
       required VoidCallback onTap,
     }) {
       final bool active = index == selectedIndex;
-      final Color inactiveColor =
-          Theme.of(context).brightness == Brightness.dark
-          ? const Color(0xFF7C8EA3)
-          : const Color(0xFF94A3B8);
 
       return Expanded(
         child: InkWell(
@@ -78,57 +81,25 @@ class ParentBottomNav extends StatelessWidget {
                 index: 0,
                 icon: Icons.home_rounded,
                 label: 'Home',
-                onTap: () {
-                  if (selectedIndex != 0) {
-                    Navigator.pushReplacementNamed(
-                      context,
-                      ParentRoutes.dashboard,
-                      arguments: args,
-                    );
-                  }
-                },
+                onTap: () => onItemSelected(0), // 🔥
               ),
               item(
                 index: 1,
                 icon: Icons.chat_bubble_outline_rounded,
                 label: 'Chat',
-                onTap: () {
-                  if (selectedIndex != 1) {
-                    Navigator.pushReplacementNamed(
-                      context,
-                      ParentRoutes.messages,
-                      arguments: args,
-                    );
-                  }
-                },
+                onTap: () => onItemSelected(1), // 🔥
               ),
               item(
                 index: 2,
                 icon: Icons.calendar_today_outlined,
                 label: 'Calendar',
-                onTap: () {
-                  if (selectedIndex != 2) {
-                    Navigator.pushReplacementNamed(
-                      context,
-                      ParentRoutes.calendar,
-                      arguments: args,
-                    );
-                  }
-                },
+                onTap: () => onItemSelected(2), // 🔥
               ),
               item(
                 index: 3,
                 icon: Icons.settings_outlined,
                 label: 'Settings',
-                onTap: () {
-                  if (selectedIndex != 3) {
-                    Navigator.pushReplacementNamed(
-                      context,
-                      ParentRoutes.profile,
-                      arguments: args,
-                    );
-                  }
-                },
+                onTap: () => onItemSelected(3), // 🔥
               ),
             ],
           ),

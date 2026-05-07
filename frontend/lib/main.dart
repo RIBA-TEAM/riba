@@ -4,9 +4,12 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
 import 'features/auth/presentation/login_screen.dart';
 import 'features/student/student_routes.dart';
-import 'features/parent/parent_routes.dart'; // ✅ EKLENDİ
+import 'features/parent/parent_routes.dart';
+import 'core/providers/notification_provider.dart';
 
 /// Uygulamanın başlangıç noktası
 Future<void> main() async {
@@ -26,28 +29,28 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false, // Debug banner gizle
-      title: 'RIBA',
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => NotificationProvider()),
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'RIBA',
 
-      /// Uygulama teması - koyu tema (dark mode)
-      theme: ThemeData(
-        brightness: Brightness.dark, // Koyu mod
-        primarySwatch: Colors.blue, // Ana renk - mavi
-        scaffoldBackgroundColor: const Color(0xFF0F172A), // Koyu mavi arka plan
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF1E293B), // AppBar arka planı
+        /// Uygulama teması - koyu tema (dark mode)
+        theme: ThemeData(
+          brightness: Brightness.dark,
+          primarySwatch: Colors.blue,
+          scaffoldBackgroundColor: const Color(0xFF0F172A),
+          appBarTheme: const AppBarTheme(backgroundColor: Color(0xFF1E293B)),
         ),
+
+        /// Uygulamanın giriş sayfası
+        home: const LoginScreen(),
+
+        /// Tüm sayfalar için yönlendirme yapılandırması
+        routes: {...StudentRoutes.routes, ...ParentRoutes.routes},
       ),
-
-      /// Uygulamanın giriş sayfası
-      home: const LoginScreen(),
-
-      /// Tüm sayfalar için yönlendirme yapılandırması
-      routes: {
-        ...StudentRoutes.routes, // Öğrenci modülü rotaları
-        ...ParentRoutes.routes, // ✅ Parent modülü rotaları eklendi
-      },
     );
   }
 }
