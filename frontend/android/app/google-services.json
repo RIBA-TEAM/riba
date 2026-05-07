@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "976911136345",
+    "project_id": "riba-2daa7",
+    "storage_bucket": "riba-2daa7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:976911136345:android:4509ad70fb7874343d6348",
+        "android_client_info": {
+          "package_name": "com.example.frontend"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBnuTSDQe_reF1RrMuGqCyIZhSecWuHpOc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

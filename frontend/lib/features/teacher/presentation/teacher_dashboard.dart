@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/features/teacher/presentation/student_risk_list_screen.dart';
+import 'package:frontend/features/teacher/presentation/reports.dart';
+import 'package:frontend/features/teacher/presentation/observation_entry_screen.dart';
+import 'settings.dart';
+import 'package:frontend/features/teacher/presentation/notifications_page.dart';
+
 
 class TeacherDashboard extends StatefulWidget {
   const TeacherDashboard({super.key});
@@ -19,12 +24,8 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
     pages = [
       buildDashboardContent(),
       const StudentRiskListScreen(),
-      const Center(
-        child: Text("Raporlar", style: TextStyle(color: Colors.white)),
-      ),
-      const Center(
-        child: Text("Ayarlar", style: TextStyle(color: Colors.white)),
-      ),
+      const ReportsPage(),
+      const ProfileScreen(),
     ];
   }
 
@@ -38,7 +39,14 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
       floatingActionButton: selectedIndex == 0
           ? FloatingActionButton(
               backgroundColor: const Color(0xFF137FEC),
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ObservationScreen(),
+                  ),
+                );
+              },
               child: const Icon(Icons.add),
             )
           : null,
@@ -127,10 +135,20 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
                         ),
                       ],
                     ),
-                    const Icon(
-                      Icons.notifications,
-                      color: Colors.white,
-                      size: 28,
+                    IconButton(
+                      icon: const Icon(
+                        Icons.notifications,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => NotificationsPage(),
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),

@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+<<<<<<< arzu
 
 import 'screens/parent_chat_screen.dart';
+=======
+import 'screens/parent_calendar_screen.dart';
+>>>>>>> develop
 import 'screens/parent_dashboard_screen.dart';
 import 'screens/parent_messages_screen.dart';
 import 'screens/parent_system_info_screen.dart';
@@ -9,6 +13,7 @@ import 'screens/parent_notifications_screen.dart';
 
 class ParentRoutes {
   // Route names
+  static const String calendar = '/parent/calendar';
   static const String dashboard = '/parent/dashboard';
   static const String messages = '/parent/messages';
   static const String system = '/parent/system';

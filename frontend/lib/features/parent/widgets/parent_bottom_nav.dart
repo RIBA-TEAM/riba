@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:frontend/features/parent/parent_routes.dart' show ParentRoutes;
 
 class ParentBottomNav extends StatelessWidget {
   const ParentBottomNav({
@@ -9,6 +10,7 @@ class ParentBottomNav extends StatelessWidget {
   });
 
   final int selectedIndex;
+  final Map<String, dynamic>? args;
 
   /// 🔥 EKLENDİ
   final Function(int) onItemSelected;
@@ -33,25 +35,14 @@ class ParentBottomNav extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  icon,
-                  color: active
-                      ? primary
-                      : (Theme.of(context).brightness == Brightness.dark
-                            ? const Color(0xFF64748B)
-                            : const Color(0xFF94A3B8)),
-                ),
+                Icon(icon, color: active ? primary : inactiveColor),
                 const SizedBox(height: 4),
                 Text(
                   label,
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
-                    color: active
-                        ? primary
-                        : (Theme.of(context).brightness == Brightness.dark
-                              ? const Color(0xFF64748B)
-                              : const Color(0xFF94A3B8)),
+                    color: active ? primary : inactiveColor,
                   ),
                 ),
               ],
@@ -72,9 +63,9 @@ class ParentBottomNav extends StatelessWidget {
           height: 80,
           padding: const EdgeInsets.symmetric(horizontal: 18),
           decoration: BoxDecoration(
-            color: (Theme.of(context).brightness == Brightness.dark
-                ? const Color(0xFF101C22).withOpacity(0.60)
-                : Colors.white.withOpacity(0.70)),
+            color: Theme.of(context).brightness == Brightness.dark
+                ? const Color.fromARGB(255, 2, 14, 19)
+                : Colors.white.withOpacity(0.70),
             border: Border(
               top: BorderSide(
                 color: Colors.white.withOpacity(

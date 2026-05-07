@@ -217,6 +217,7 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
                           },
                         ),
 
+<<<<<<< arzu
                         const SizedBox(height: 12),
 
                         ParentNavTile(
@@ -261,6 +262,15 @@ class _ParentDashboardScreenState extends State<ParentDashboardScreen> {
       child: Text(
         '$title sayfası yakında',
         style: const TextStyle(color: Colors.white),
+=======
+          Positioned(
+  left: 0,
+  right: 0,
+  bottom: 0,
+  child: ParentBottomNav(selectedIndex: 0, args: parentArgs),
+),
+        ],
+>>>>>>> develop
       ),
     );
   }
