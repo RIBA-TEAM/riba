@@ -268,6 +268,50 @@ class ParentDashboardScreen extends StatelessWidget {
             ),
           ),
 
+                        const SizedBox(height: 12),
+
+                        ParentNavTile(
+                          icon: Icons.info_outline_rounded,
+                          title: 'Sistem Bilgisi',
+                          subtitle:
+                              'RIBA sistemi hakkında daha fazla bilgi alın.',
+                          onTap: () {
+                            Navigator.pushNamed(context, '/parent/system');
+                          },
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        ParentNavTile(
+                          icon: Icons.person_outline_rounded,
+                          title: 'Profil ve Ayarlar',
+                          subtitle: 'Bildirim tercihlerinizi buradan yönetin.',
+                          onTap: () {
+                            setState(() {
+                              _selectedIndex = 3;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 28),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// PLACEHOLDER (şimdilik)
+  Widget _buildPlaceholder(String title) {
+    return Center(
+      child: Text(
+        '$title sayfası yakında',
+        style: const TextStyle(color: Colors.white),
           Positioned(
   left: 0,
   right: 0,

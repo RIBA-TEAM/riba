@@ -9,6 +9,13 @@ import 'screens/parent_notifications_screen.dart';
 import 'screens/parent_system_info_screen.dart';
 import 'screens/parent_profile_settings_screen.dart';
 
+import 'screens/parent_chat_screen.dart';
+import 'screens/parent_dashboard_screen.dart';
+import 'screens/parent_messages_screen.dart';
+import 'screens/parent_system_info_screen.dart';
+import 'screens/parent_profile_settings_screen.dart';
+import 'screens/parent_notifications_screen.dart';
+
 class ParentRoutes {
   // Route names
   static const String calendar = '/parent/calendar';

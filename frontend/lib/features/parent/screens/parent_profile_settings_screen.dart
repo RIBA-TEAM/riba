@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend/features/auth/presentation/login_screen.dart';
 import '../widgets/parent_bottom_nav.dart';
 import 'parent_system_info_screen.dart';
+import '../../auth/presentation/login_screen.dart';
 
 class ParentProfileSettingsScreen extends StatefulWidget {
   const ParentProfileSettingsScreen({super.key});
