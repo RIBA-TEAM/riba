@@ -1,0 +1,517 @@
+import 'dart:ui';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+import '../../../core/config/api_config.dart';
+import '../../teacher/presentation/teacher_dashboard.dart';
+import '../../student/student_routes.dart';
+import '../../parent/parent_routes.dart';
+
+enum UserRole { student, parent, counselor, teacher }
+
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  UserRole selectedRole = UserRole.student;
+
+  final identifierController = TextEditingController();
+  final passwordController = TextEditingController();
+
+  bool _obscurePassword = true;
+  @override
+  void dispose() {
+    identifierController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> signIn(String userId, String password, String role) async {
+    try {
+      // First try backend API
+      final uri = Uri.parse('${ApiConfig.apiBaseUrlV1}/auth/login');
+
+      debugPrint('Backend login attempt: $userId ($role)');
+
+      final response = await http
+          .post(
+            uri,
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'email': userId.trim(),
+              'password': password.trim(),
+              'role': role.toLowerCase(),
+            }),
+          )
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              debugPrint('Backend timeout, falling back to Firestore');
+              return http.Response('timeout', 408);
+            },
+          );
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+
+        if (responseData['success'] == true) {
+          debugPrint('Backend login successful');
+
+          // Route based on user type
+          if (role.toLowerCase() == "student") {
+            Navigator.pushReplacementNamed(context, StudentRoutes.dashboard);
+          } else if (role.toLowerCase() == "parent") {
+            Navigator.pushReplacementNamed(
+              context,
+              ParentRoutes.dashboard,
+              arguments: {
+                'parentId': responseData['user_id'] ?? '',
+                'parentName': responseData['full_name'] ?? '',
+              },
+            );
+          } else if (role.toLowerCase() == "counselor" ||
+              role.toLowerCase() == "teacher") {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => TeacherDashboard(
+                  userId: responseData['user_id'] ?? '',
+                  userName: responseData['full_name'] ?? '',
+                  role: role.toLowerCase(),
+                ),
+              ),
+            );
+          }
+          return;
+        } else {
+          _showErrorDialog(
+            'Login Failed',
+            responseData['message'] ?? 'Invalid credentials',
+          );
+          debugPrint('Backend login failed: ${responseData['message']}');
+          return;
+        }
+      } else if (response.statusCode == 408) {
+        // Fallback to Firestore
+        debugPrint('Backend unavailable, using Firestore');
+        await _loginWithFirestore(userId, password, role);
+      } else {
+        _showErrorDialog('Error', 'Login error: ${response.statusCode}');
+        debugPrint('Backend error: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Login exception: $e');
+      // Fallback to Firestore
+      await _loginWithFirestore(userId, password, role);
+    }
+  }
+
+  Future<void> _loginWithFirestore(
+    String userId,
+    String password,
+    String role,
+  ) async {
+    try {
+      debugPrint('Using Firestore for login');
+      final firestore = FirebaseFirestore.instance;
+
+      if (role == "student") {
+        final result = await firestore
+            .collection('students')
+            .where('school_no', isEqualTo: userId.trim())
+            .where('password', isEqualTo: password.trim())
+            .get(const GetOptions(source: Source.server));
+
+        if (result.docs.isEmpty) {
+          _showErrorDialog('Error', 'Student not found or wrong password');
+          return;
+        }
+
+        Navigator.pushReplacementNamed(context, StudentRoutes.dashboard);
+        return;
+      }
+
+      final emailLookup = userId.trim();
+      final result = await firestore
+          .collection('users')
+          .where('email', isEqualTo: emailLookup)
+          .get(const GetOptions(source: Source.server));
+
+      if (result.docs.isEmpty) {
+        final projectId = Firebase.app().options.projectId;
+        debugPrint(
+          'Firestore users query: 0 docs for email="$emailLookup" '
+          '(projectId=$projectId). Konsolda aynı projectId ve `users.email` alanını kontrol edin.',
+        );
+        _showErrorDialog(
+          'Error',
+          'User not found.\n'
+          '(Uygulama projesi: $projectId — Firestore\'da bu projede `users` içinde bu e-posta var mı?)',
+        );
+        return;
+      }
+
+      final userDoc = result.docs.first;
+      final userData = userDoc.data();
+
+      final storedPassword = userData['password']?.toString().trim() ?? '';
+      if (storedPassword != password.trim()) {
+        _showErrorDialog('Error', 'Wrong password');
+        return;
+      }
+
+      // Same as backend: prefer `role`, fall back to legacy `user_type`.
+      final storedRole = (userData['role'] ?? userData['user_type'] ?? '')
+          .toString()
+          .toLowerCase()
+          .trim();
+      if (storedRole != role.toLowerCase().trim()) {
+        _showErrorDialog('Error', 'Wrong role');
+        return;
+      }
+
+      if (role == 'parent') {
+        final studentId = userData['student_id'];
+
+        final studentDoc = await firestore
+            .collection('students')
+            .doc(studentId)
+            .get();
+
+        if (!studentDoc.exists) {
+          _showErrorDialog('Error', 'Student not found for this parent');
+          return;
+        }
+
+        final studentData = studentDoc.data()!;
+
+        Navigator.pushReplacementNamed(
+          context,
+          ParentRoutes.dashboard,
+          arguments: {
+            'parentId': userDoc.id,
+            'parentName': userData['name'] ?? '',
+            'parentEmail': userData['email'] ?? '',
+            'studentId': studentId,
+            'studentName': studentData['name'] ?? '',
+            'studentClass': studentData['class'] ?? '',
+            'schoolNo': studentData['school_no'] ?? '',
+          },
+        );
+        return;
+      }
+
+      if (role == 'counselor' || role == 'teacher') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => TeacherDashboard(
+              userId: userDoc.id,
+              userName: (userData['name'] ?? userData['full_name'] ?? '')
+                  .toString(),
+              role: role,
+            ),
+          ),
+        );
+        return;
+      }
+    } catch (e) {
+      _showErrorDialog('Error', 'Login error: $e');
+      debugPrint('Firestore login error: $e');
+    }
+  }
+
+  void _showErrorDialog(String title, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String getIdentifierHint() {
+    switch (selectedRole) {
+      case UserRole.student:
+        return "Öğrenci Numarası";
+      case UserRole.parent:
+        return "Email or Ebeveyn No";
+      case UserRole.counselor:
+        return "Okul Emaili";
+      case UserRole.teacher:
+        return "Okul Emaili";
+    }
+  }
+
+  IconData getIdentifierIcon() {
+    switch (selectedRole) {
+      case UserRole.student:
+        return Icons.badge_outlined;
+      case UserRole.parent:
+        return Icons.alternate_email;
+      case UserRole.counselor:
+        return Icons.mail_outline;
+      case UserRole.teacher:
+        return Icons.mail_outline;
+    }
+  }
+
+  String getTitle() {
+    switch (selectedRole) {
+      case UserRole.student:
+        return "Öğrenci Girişi";
+      case UserRole.parent:
+        return "Ebeveyn Girişi";
+      case UserRole.counselor:
+        return "Rehber Girişi";
+      case UserRole.teacher:
+        return "Öğretmen Girişi";
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const inputTextColor = Colors.black;
+    const hintColor = Colors.black54;
+    const iconColor = Colors.black87;
+
+    return Scaffold(
+      resizeToAvoidBottomInset: true,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF042F2E), Color(0xFF064E3B), Color(0xFF1E40AF)],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              padding: const EdgeInsets.all(24),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                    child: Container(
+                      width: 420,
+                      padding: const EdgeInsets.all(28),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.92),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            getTitle(),
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade200,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: UserRole.values.map((role) {
+                                final isSelected = role == selectedRole;
+
+                                return Expanded(
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        selectedRole = role;
+                                        identifierController.clear();
+                                      });
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 12,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: isSelected
+                                            ? const Color(0xFF196EE6)
+                                            : Colors.transparent,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        role.name.toUpperCase(),
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          color: isSelected
+                                              ? Colors.white
+                                              : Colors.black54,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          TextField(
+                            controller: identifierController,
+                            keyboardType: selectedRole == UserRole.student
+                                ? TextInputType.number
+                                : TextInputType.emailAddress,
+                            textInputAction: TextInputAction.next,
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            decoration: InputDecoration(
+                              prefixIcon: Icon(
+                                getIdentifierIcon(),
+                                color: Colors.black87,
+                              ),
+                              hintText: getIdentifierHint(),
+                              hintStyle: const TextStyle(color: Colors.black54),
+                              filled: true,
+                              fillColor: Colors.white,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: Colors.black12,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFF196EE6),
+                                  width: 1.5,
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          TextField(
+                            controller: passwordController,
+                            obscureText: _obscurePassword,
+                            textInputAction: TextInputAction.done,
+                            onSubmitted: (_) async {
+                              await signIn(
+                                identifierController.text,
+                                passwordController.text,
+                                selectedRole.name,
+                              );
+                            },
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            decoration: InputDecoration(
+                              prefixIcon: const Icon(
+                                Icons.lock_outline,
+                                color: Colors.black87,
+                              ),
+                              hintText: "Password",
+                              hintStyle: const TextStyle(color: Colors.black54),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility_off_outlined
+                                      : Icons.visibility_outlined,
+                                  color: Colors.black87,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _obscurePassword = !_obscurePassword;
+                                  });
+                                },
+                              ),
+                              filled: true,
+                              fillColor: Colors.white,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: Colors.black12,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFF196EE6),
+                                  width: 1.5,
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF196EE6),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              onPressed: () async {
+                                await signIn(
+                                  identifierController.text,
+                                  passwordController.text,
+                                  selectedRole.name,
+                                );
+                              },
+                              child: const Text(
+                                "Sign In",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
