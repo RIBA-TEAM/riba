@@ -10,7 +10,7 @@ class FirestoreService {
     required String note,
     required int riskLevel,
   }) async {
-    await _db.collection("OBSERVATIONS").add({
+    await _db.collection("observations").add({
       "student_id": studentId,
       "teacher_id": teacherId,
       "behavior": behavior,

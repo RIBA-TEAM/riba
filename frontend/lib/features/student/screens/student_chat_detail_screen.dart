@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 
+import '../../../core/config/api_config.dart';
+import '../../../core/services/api_service.dart';
+
 /// AMAÇ: RIBA ile birebir sohbet detay ekranı
 /// Bu ekran, belirli bir sohbete girildiğinde mesaj akışını, hızlı duygu seçim çiplerini
 /// ve mesaj giriş alanını gösterir. Tasarım koyu temaya uygun şekilde stilize edilmiştir.
@@ -23,14 +26,28 @@ class _StudentChatDetailScreenState extends State<StudentChatDetailScreen> {
       "text":
           "Merhaba! Bugün kendini nasıl hissediyorsun? Seninle konuşmak için buradayım 💙",
     },
-    {
-      "sender": "user",
-      "text": "Biraz kaygılıyım aslında. Yaklaşan sınavlar beni düşündürüyor.",
-    },
   ];
 
   /// Scroll controller: yeni mesaj gönderildiğinde listeyi sona kaydırmak için
   final ScrollController _listController = ScrollController();
+
+  /// Chat ID
+  final String _chatId = 'default-chat-001';
+
+  /// Loading state
+  bool _isLoading = false;
+
+  /// Seçili duygu durumu (mood). Backend prompt'una eklenir.
+  String? _selectedMood;
+
+  /// Mood chip listesi: (etiket -> backend'e gidecek metin)
+  static const List<Map<String, String>> _moodOptions = [
+    {'emoji': '🙂', 'label': 'İyiyim', 'value': 'iyi'},
+    {'emoji': '😟', 'label': 'Kaygılıyım', 'value': 'kaygılı'},
+    {'emoji': '😢', 'label': 'Üzgünüm', 'value': 'üzgün'},
+    {'emoji': '😡', 'label': 'Kızgınım', 'value': 'kızgın'},
+    {'emoji': '😶', 'label': 'Yalnızım', 'value': 'yalnız'},
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -196,6 +213,30 @@ class _StudentChatDetailScreenState extends State<StudentChatDetailScreen> {
             ),
           ),
 
+          /// MOOD SEÇİCİ: yatay kaydırılabilir duygu çipi listesi
+          SizedBox(
+            height: 44,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              itemCount: _moodOptions.length,
+              itemBuilder: (context, index) {
+                final m = _moodOptions[index];
+                final value = m['value']!;
+                final isSelected = _selectedMood == value;
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _selectedMood = isSelected ? null : value;
+                    });
+                  },
+                  child: _chip(m['emoji']!, m['label']!, selected: isSelected),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 8),
+
           /// MESAJ GİRİŞ ALANI
           /// TextField ve Gönder butonu içerir
           Padding(
@@ -249,22 +290,66 @@ class _StudentChatDetailScreenState extends State<StudentChatDetailScreen> {
   }
 
   /// Mesaj gönderme: kullanıcının yazdığı metni `_messages`'e ekler,
-  /// ardından basit bir echo bot cevabı ekler ve listeyi sona kaydırır.
-  void _handleSend() {
+  /// backend'e gönderir, bot cevabı alır ve listeyi sona kaydırır.
+  void _handleSend() async {
     final text = controller.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty || _isLoading) return;
 
     setState(() {
       _messages.add({"sender": "user", "text": text});
+      _isLoading = true;
     });
 
     controller.clear();
 
-    // Kısa bir gecikme ile bot cevabı ekle (doğal bir his için)
-    Future.delayed(const Duration(milliseconds: 300), () {
-      setState(() {
-        _messages.add({"sender": "bot", "text": text});
-      });
+    try {
+      debugPrint(
+        'Sending chat (base: ${ApiConfig.apiBaseUrlV1}, mood: $_selectedMood)',
+      );
+
+      // Önceki konuşma turlarını backend'e prompt context'i olarak yolla.
+      // Son eklenen kullanıcı mesajını history'ye dahil etme (zaten 'text' alanı olarak gidiyor).
+      final history = _messages
+          .take(_messages.length - 1)
+          .map(
+            (m) => {
+              'role': (m['sender'] ?? 'bot') == 'user' ? 'user' : 'bot',
+              'text': m['text'] ?? '',
+            },
+          )
+          .toList();
+
+      final responseData = await ApiService().sendChatMessage(
+        _chatId,
+        text,
+        mood: _selectedMood,
+        history: history,
+      );
+
+      if (responseData['success'] == false) {
+        final err = responseData['error']?.toString() ?? 'Sunucu hatası';
+        _showErrorSnackBar(err);
+        setState(() {
+          _isLoading = false;
+        });
+      } else {
+        // Backend yeni 'reply', eski yapı 'bot_response' döndürüyor.
+        final dynamic replyValue =
+            responseData['reply'] ?? responseData['bot_response'];
+        final botResponse = replyValue?.toString().trim() ?? '';
+
+        if (botResponse.isEmpty) {
+          _showErrorSnackBar('Bot yanıtı alınamadı');
+          setState(() {
+            _isLoading = false;
+          });
+        } else {
+          setState(() {
+            _messages.add({'sender': 'bot', 'text': botResponse});
+            _isLoading = false;
+          });
+        }
+      }
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_listController.hasClients) {
@@ -275,7 +360,25 @@ class _StudentChatDetailScreenState extends State<StudentChatDetailScreen> {
           );
         }
       });
-    });
+    } catch (e) {
+      debugPrint('Error sending message: $e');
+      _showErrorSnackBar(ApiConfig.userMessageForError(e));
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _showErrorSnackBar(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   /// Tek bir duygu çipi oluşturur

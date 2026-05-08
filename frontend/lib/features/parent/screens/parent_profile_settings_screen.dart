@@ -1,13 +1,10 @@
 import 'dart:ui';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-<<<<<<< arzu
-import '../../auth/presentation/login_screen.dart';
-=======
 import 'package:frontend/features/auth/presentation/login_screen.dart';
 import '../widgets/parent_bottom_nav.dart';
 import 'parent_system_info_screen.dart';
->>>>>>> develop
+import '../../auth/presentation/login_screen.dart';
 
 class ParentProfileSettingsScreen extends StatefulWidget {
   const ParentProfileSettingsScreen({super.key});
@@ -382,12 +379,12 @@ class _ParentProfileSettingsScreenState
                                       color: Color(0xFF9CA3AF),
                                     ),
                                     onTap: () {
-                                      Navigator.pushAndRemoveUntil(
+                                      Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (_) => const LoginScreen(),
+                                          builder: (_) =>
+                                              const ParentSystemInfoScreen(),
                                         ),
-                                        (route) => false,
                                       );
                                     },
                                   ),
@@ -415,6 +412,13 @@ class _ParentProfileSettingsScreenState
                       ],
                     ),
                   ),
+                ),
+
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: ParentBottomNav(selectedIndex: 3, args: parentArgs),
                 ),
               ],
             ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ObservationScreen extends StatefulWidget {
   const ObservationScreen({super.key});
@@ -99,10 +100,12 @@ class _ObservationScreenState extends State<ObservationScreen> {
       final studentData = studentDoc.data()!;
       final parentId = studentData['parent_id'] ?? '';
 
+      final teacherId = FirebaseAuth.instance.currentUser?.uid ?? 'unknown';
+
       await firestore.collection('observations').add({
         'student_id': student,
         'parent_id': parentId,
-        'teacher_id': 'teacher1',
+        'teacher_id': teacherId,
         'title': _buildTitle(),
         'message': _buildMessage(),
         'note': notesController.text.trim(),

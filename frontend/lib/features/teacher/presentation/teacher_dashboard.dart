@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/features/teacher/presentation/appointments_screen.dart';
+import 'package:frontend/features/teacher/presentation/availability_screen.dart';
 import 'package:frontend/features/teacher/presentation/student_risk_list_screen.dart';
 import 'package:frontend/features/teacher/presentation/reports.dart';
 import 'package:frontend/features/teacher/presentation/observation_entry_screen.dart';
@@ -7,7 +9,22 @@ import 'package:frontend/features/teacher/presentation/notifications_page.dart';
 
 
 class TeacherDashboard extends StatefulWidget {
-  const TeacherDashboard({super.key});
+  const TeacherDashboard({
+    super.key,
+    this.userId = '',
+    this.userName = '',
+    this.role = 'counselor',
+  });
+
+  /// UID of the logged-in counselor / teacher (passed from LoginScreen).
+  final String userId;
+
+  /// Display name shown on the dashboard greeting.
+  final String userName;
+
+  /// Either `counselor` or `teacher` — used by appointment screens to set
+  /// `owner_role` correctly.
+  final String role;
 
   @override
   State<TeacherDashboard> createState() => _TeacherDashboardState();
@@ -27,6 +44,31 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
       const ReportsPage(),
       const ProfileScreen(),
     ];
+  }
+
+  void _openAvailability() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AvailabilityScreen(
+          ownerId: widget.userId,
+          ownerName: widget.userName.isEmpty ? 'Görevli' : widget.userName,
+          ownerRole: widget.role,
+        ),
+      ),
+    );
+  }
+
+  void _openOwnerAppointments() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => OwnerAppointmentsScreen(
+          ownerId: widget.userId,
+          ownerName: widget.userName.isEmpty ? 'Görevli' : widget.userName,
+        ),
+      ),
+    );
   }
 
   @override
@@ -106,17 +148,17 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Row(
-                      children: const [
-                        CircleAvatar(
+                      children: [
+                        const CircleAvatar(
                           radius: 24,
                           backgroundColor: Color(0xFF137FEC),
                           child: Icon(Icons.person, color: Colors.white),
                         ),
-                        SizedBox(width: 12),
+                        const SizedBox(width: 12),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
+                            const Text(
                               "Günaydın",
                               style: TextStyle(
                                 color: Colors.grey,
@@ -124,8 +166,12 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
                               ),
                             ),
                             Text(
-                              "Şevval Eser",
-                              style: TextStyle(
+                              widget.userName.isEmpty
+                                  ? (widget.role == 'teacher'
+                                      ? 'Öğretmen'
+                                      : 'Rehber')
+                                  : widget.userName,
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 18,
@@ -159,6 +205,35 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    const Text(
+                      "Hızlı Erişim",
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _QuickActionCard(
+                            icon: Icons.event_available_outlined,
+                            label: 'Müsait Saatler',
+                            onTap: _openAvailability,
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _QuickActionCard(
+                            icon: Icons.list_alt_rounded,
+                            label: 'Randevular',
+                            onTap: _openOwnerAppointments,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
                     const Text(
                       "Öğrenci Önceliklendirme",
                       style: TextStyle(
@@ -228,6 +303,59 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _QuickActionCard extends StatelessWidget {
+  const _QuickActionCard({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white12),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: const Color(0xFF137FEC).withOpacity(0.18),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: const Color(0xFF137FEC), size: 22),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
